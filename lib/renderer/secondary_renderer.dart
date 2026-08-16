@@ -39,7 +39,7 @@ class SecondaryRenderer extends BaseChartRenderer<MACDEntity> {
     if (span == null) return;
     TextPainter tp = TextPainter(text: span, textDirection: TextDirection.ltr);
     tp.layout();
-    tp.paint(canvas, Offset(x, chartRect.top - topPadding));
+    tp.paint(canvas, Offset(x, chartRect.top - topPadding + chartStyle.indicatorTopMargin));
   }
 
   @override
@@ -52,7 +52,7 @@ class SecondaryRenderer extends BaseChartRenderer<MACDEntity> {
       fixedLength: fixedLength,
       chartRect: Rect.fromLTRB(
         chartRect.left,
-        chartRect.top - topPadding,
+        chartRect.top - topPadding + chartStyle.indicatorTopMargin,
         chartRect.right - chartStyle.space,
         chartRect.bottom,
       ),

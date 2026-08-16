@@ -1,4 +1,4 @@
-library k_chart_plus;
+library;
 
 export 'k_chart_widget.dart'; //布局
 export 'styles/k_chart_style.dart';

@@ -6,7 +6,7 @@ class CCIIndicator extends SecondaryIndicator<MACDEntity, CCIStyle> {
   CCIIndicator({ CCIStyle indicatorStyle = const CCIStyle() }): super(
     name: 'commodityChannelIndex',
     shortName: 'CCI',
-    calcParams: const [20],
+    calcParams: const [90],
     indicatorStyle: indicatorStyle,
   ) {
     _linePaint = Paint()

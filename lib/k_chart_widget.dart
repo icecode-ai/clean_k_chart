@@ -53,12 +53,12 @@ class KChartWidget extends StatefulWidget {
     this.chartStyle,
     this.chartColors, {
     this.detailBuilder,
-    this.xFrontPadding = 100,
+    this.xFrontPadding = 0,
     this.mainIndicators = const [],
     this.secondaryIndicators = const [],
     this.volHidden = false,
     this.isLine = false,
-    this.hideGrid = false,
+    this.hideGrid = true,
     this.showNowPrice = true,
     this.timeFormat = TimeFormat.YEAR_MONTH_DAY,
     this.onLoadMore,
@@ -77,7 +77,7 @@ class KChartWidget extends StatefulWidget {
 
 class _KChartWidgetState extends State<KChartWidget> with TickerProviderStateMixin {
   final StreamController<InfoWindowEntity?> _mInfoWindowStream = StreamController<InfoWindowEntity?>();
-  double _mScaleX = 1.0, _mScrollX = 0.0, _mSelectX = 0.0;
+  double _mScaleX = 0.5, _mScrollX = 0.0, _mSelectX = 0.0;
   AnimationController? _controller;
   Animation<double>? _aniX;
 
@@ -86,7 +86,7 @@ class _KChartWidgetState extends State<KChartWidget> with TickerProviderStateMix
   }
 
   InteractionMode _interactionMode = InteractionMode.none;
-  double _lastScale = 1.0;
+  double _lastScale = 0.5;
   bool _isScale = false;
 
   @override
@@ -111,8 +111,8 @@ class _KChartWidgetState extends State<KChartWidget> with TickerProviderStateMix
   Widget build(BuildContext context) {
     if (widget.datas != null && widget.datas!.isEmpty) {
       _mScrollX = _mSelectX = 0.0;
-      _mScaleX = 1.0;
-      _lastScale = 1.0;
+      _mScaleX = 0.5;
+      _lastScale = 0.5;
     }
     final BaseDimension baseDimension = BaseDimension(
       mBaseHeight: widget.mBaseHeight,

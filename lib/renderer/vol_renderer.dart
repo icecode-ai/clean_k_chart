@@ -89,7 +89,7 @@ class VolRenderer extends BaseChartRenderer<VolumeEntity> {
     );
     TextPainter tp = TextPainter(text: span, textDirection: TextDirection.ltr);
     tp.layout();
-    tp.paint(canvas, Offset(x, chartRect.top - topPadding));
+    tp.paint(canvas, Offset(x, chartRect.top - topPadding + chartStyle.indicatorTopMargin));
   }
 
   @override

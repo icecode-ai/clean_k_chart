@@ -435,7 +435,7 @@ class ChartPainter extends BaseChartPainter {
     );
 
     //repaint the background and text
-    String priceText = NumberUtil.formatFixed(value, fixedLength) ?? '';
+    /*String priceText = NumberUtil.formatFixed(value, fixedLength) ?? '';
     TextPainter tp = getTextPainter(
       isLastCandleVisible ? priceText : '$priceText ›',
       priceColor,
@@ -466,7 +466,7 @@ class ChartPainter extends BaseChartPainter {
     tp.paint(
       canvas,
       Offset(offsetX + paddingX, top),
-    );
+    );*/
   }
 
   ///draw cross lines

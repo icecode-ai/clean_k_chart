@@ -63,7 +63,7 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
   @override
   void drawText(Canvas canvas, CandleEntity data, double x) {
     if (isLine == true) return;
-    double y = 2.0;
+    double y = chartStyle.indicatorTopMargin;
     for (int i = 0; i < indicatorLi.length; ++i) {
       TextSpan? span = indicatorLi[i].drawFigure(data, fixedLength, chartColors);
       if (span == null) return;

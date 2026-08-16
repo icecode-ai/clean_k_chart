@@ -61,17 +61,17 @@ class KChartColors {
     ],
 
     ///
-    this.ma5Color = const Color(0xFFFFC634),
-    this.ma10Color = const Color(0xff35cdac),
-    this.upColor = const Color(0xFF14AD8F),
-    this.dnColor = const Color(0xFFD5405D),
+    this.ma5Color = const Color(0xFFFF0000),
+    this.ma10Color = const Color(0xFF000000),
+    this.upColor = const Color(0xFFD5405D),
+    this.dnColor = const Color(0xFF14AD8F),
     this.volColor = const Color(0xff2f8fd5),
-    this.volUpColor = const Color(0xFF14AD8F),
-    this.volDnColor = const Color(0xFFD5405D),
+    this.volUpColor = const Color(0xFFD5405D),
+    this.volDnColor = const Color(0xFF14AD8F),
     this.defaultTextColor = const Color(0xFF909196),
 
-    this.nowPriceUpColor = const Color(0xFF191919), //0xFF14AD8F
-    this.nowPriceDnColor = const Color(0xFF191919), //0xFFD5405D
+    this.nowPriceUpColor = const Color(0xFFD5405D), //0xFF191919
+    this.nowPriceDnColor = const Color(0xFF14AD8F), //0xFF191919
 
     ///color of grid
     this.gridColor = const Color(0xFFD1D3DB),
@@ -89,13 +89,15 @@ class KChartColors {
 }
 
 class KChartStyle {
-  final double topPadding = 20.0;
+  final double topPadding = 24.0;
 
-  final double bottomPadding = 16.0;
+  final double bottomPadding = 24.0;
 
-  final double childPadding = 12.0;
+  final double childPadding = 24.0;
 
-  final double space = 4.0;
+  final double space = 0.0;
+
+  final double indicatorTopMargin = 8.0;
 
   ///point-to-point distance
   final double pointWidth = 11.0;
@@ -125,5 +127,5 @@ class KChartStyle {
   ///customize the time below
   final List<String>? dateTimeFormat;
 
-  const KChartStyle([this.dateTimeFormat]);
+  const KChartStyle({this.dateTimeFormat});
 }
