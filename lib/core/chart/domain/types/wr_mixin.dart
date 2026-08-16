@@ -1,0 +1,3 @@
+mixin WrMixin {
+  double? r;
+}

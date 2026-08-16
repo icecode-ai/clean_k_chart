@@ -1,5 +1,14 @@
-/// A Calculator.
-class Calculator {
-  /// Returns [value] plus 1.
-  int addOne(int value) => value + 1;
-}
+library;
+
+export 'core/chart/presentation/widgets/k_chart_widget.dart'; //布局
+export 'styles/k_chart_style.dart';
+export 'styles/depth_chart_style.dart';
+export 'core/chart/presentation/widgets/depth_chart.dart';
+export 'chart_translations.dart';
+
+export 'utils/index.dart'; //数据加工
+export 'entity/index.dart'; //数据
+export 'renderer/index.dart';
+export 'extension/num_ext.dart';
+
+export 'indicator/indicator_template.dart';

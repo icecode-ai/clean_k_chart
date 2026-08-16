@@ -1,0 +1,3 @@
+mixin RsiMixin {
+  double? rsi;
+}

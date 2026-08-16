@@ -1,0 +1,3 @@
+mixin CciMixin {
+  double? cci;
+}
