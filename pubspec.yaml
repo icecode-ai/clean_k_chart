@@ -1,0 +1,15 @@
+name: clean_k_chart
+description: "A new Flutter project."
+version: 0.0.1
+homepage: https://github.com/icecode-ai/clean_k_chart
+
+environment:
+  sdk: ^3.13.0
+  flutter: ">=1.17.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
