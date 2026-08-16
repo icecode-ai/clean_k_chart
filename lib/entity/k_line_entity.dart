@@ -1,12 +1,8 @@
-import '../entity/k_entity.dart';
+import 'package:clean_k_chart/entity/k_entity.dart';
 
 class KLineEntity extends KEntity {
-  late double open;
-  late double high;
-  late double low;
-  late double close;
-  late double vol;
   late double? amount;
+
   // late double? turnover;
   double? change;
   double? ratio;
@@ -14,14 +10,9 @@ class KLineEntity extends KEntity {
 
   KLineEntity.fromCustom({
     this.amount,
-    required this.open,
-    required this.close,
     this.change,
     this.ratio,
     required this.time,
-    required this.high,
-    required this.low,
-    required this.vol,
   });
 
   KLineEntity.fromJson(Map<String, dynamic> json) {
@@ -32,7 +23,7 @@ class KLineEntity extends KEntity {
     vol = json['vol']?.toDouble() ?? 0;
     amount = json['amount']?.toDouble();
     int? tempTime = json['time']?.toInt();
-    //兼容火币数据
+    // 兼容火币数据
     if (tempTime == null) {
       tempTime = json['id']?.toInt() ?? 0;
       tempTime = tempTime! * 1000;
@@ -43,16 +34,16 @@ class KLineEntity extends KEntity {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['time'] = this.time;
-    data['open'] = this.open;
-    data['close'] = this.close;
-    data['high'] = this.high;
-    data['low'] = this.low;
-    data['vol'] = this.vol;
-    data['amount'] = this.amount;
-    data['ratio'] = this.ratio;
-    data['change'] = this.change;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['time'] = time;
+    data['open'] = open;
+    data['close'] = close;
+    data['high'] = high;
+    data['vol'] = vol;
+    data['amount'] = amount;
+    data['ratio'] = ratio;
+    data['change'] = change;
+
     return data;
   }
 

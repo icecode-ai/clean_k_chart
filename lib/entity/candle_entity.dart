@@ -1,4 +1,4 @@
-import 'package:k_chart_plus/indicator/indicator_template.dart';
+import 'package:clean_k_chart/types/boll.dart';
 
 mixin CandleEntity {
   late double open;
