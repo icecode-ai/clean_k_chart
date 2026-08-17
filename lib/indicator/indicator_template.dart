@@ -1,21 +1,20 @@
 import 'dart:math';
-import 'package:flutter/cupertino.dart';
+
 import 'package:clean_k_chart/clean_k_chart.dart';
+import 'package:flutter/cupertino.dart';
 
 part 'indicator_style.dart';
-
-part 'main/sar_indicator.dart';
-part 'main/ma_indicator.dart';
 part 'main/boll_indicator.dart';
 part 'main/ema_indicator.dart';
-
-part 'secondary/macd_indicator.dart';
+part 'main/ma_indicator.dart';
+part 'main/sar_indicator.dart';
 part 'secondary/cci_indicator.dart';
 part 'secondary/kdj_indicator.dart';
+part 'secondary/macd_indicator.dart';
 part 'secondary/rsi_indicator.dart';
 part 'secondary/wr_indicator.dart';
 
-typedef GetYFunction= double Function(double y);
+typedef GetYFunction = double Function(double y);
 
 abstract class IndicatorTemplate<T, K> {
   final String name;
@@ -33,14 +32,21 @@ abstract class IndicatorTemplate<T, K> {
     required this.indicatorStyle,
   });
 
-
   /// record.$1 : min value
   /// record.$2: max value
   (double, double) getMaxMinValue(KLineEntity entity, double minV, double maxV);
 
   TextSpan? drawFigure(T value, int precision, KChartColors chartColors);
 
-  void drawChart(T lastPoint, T curPoint, double lastX, double curX, GetYFunction getY, Canvas canvas, KChartColors chartColors, double scaleX);
+  void drawChart(
+    T lastPoint,
+    T curPoint,
+    double lastX,
+    double curX,
+    GetYFunction getY,
+    Canvas canvas,
+    KChartColors chartColors,
+  );
 
   void calc(List<KLineEntity> dataList);
 

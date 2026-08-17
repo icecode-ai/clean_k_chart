@@ -7,7 +7,6 @@ class SecondaryRenderer extends BaseChartRenderer<MACDEntity> {
   SecondaryIndicator indicator;
   final KChartStyle chartStyle;
   final KChartColors chartColors;
-  final double scaleX;
 
   SecondaryRenderer(
     Rect mainRect,
@@ -17,9 +16,8 @@ class SecondaryRenderer extends BaseChartRenderer<MACDEntity> {
     this.indicator,
     int fixedLength,
     this.chartStyle,
-    this.chartColors, {
-    this.scaleX = 1.0,
-  }) : super(
+    this.chartColors,
+  ) : super(
     chartRect: mainRect,
     maxValue: maxValue,
     minValue: minValue,
@@ -30,7 +28,7 @@ class SecondaryRenderer extends BaseChartRenderer<MACDEntity> {
 
   @override
   void drawChart(MACDEntity lastPoint, MACDEntity curPoint, double lastX, double curX, Size size, Canvas canvas) {
-    indicator.drawChart(lastPoint, curPoint, lastX, curX, getY, canvas, chartColors, scaleX);
+    indicator.drawChart(lastPoint, curPoint, lastX, curX, getY, canvas, chartColors);
   }
 
   @override

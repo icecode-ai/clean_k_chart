@@ -12,7 +12,26 @@ import 'main_renderer.dart';
 import 'secondary_renderer.dart';
 import 'vol_renderer.dart';
 
+class TrendLine {
+  final Offset p1;
+  final Offset p2;
+  final double maxHeight;
+  final double scale;
+
+  TrendLine(this.p1, this.p2, this.maxHeight, this.scale);
+}
+
+double? trendLineX;
+
+double getTrendLineX() {
+  return trendLineX ?? 0;
+}
+
 class ChartPainter extends BaseChartPainter {
+  final List<TrendLine> lines; //For TrendLine
+  final bool isTrendLine; //For TrendLine
+  bool isrecordingCord = false; //For TrendLine
+  final double selectY; //For TrendLine
   static get maxScrollX => BaseChartPainter.maxScrollX;
   late BaseChartRenderer mMainRenderer;
   BaseChartRenderer? mVolRenderer;
@@ -24,24 +43,31 @@ class ChartPainter extends BaseChartPainter {
   Color? macdColor, difColor, deaColor, jColor;
   int fixedLength;
   final KChartColors chartColors;
-  late Paint crossLinePaint, selectPointPaint, selectorBorderPaint;
+  late Paint paintCross, selectPointPaint, selectorBorderPaint;
   late Paint nowPriceSelectorPaint, nowPriceSelectorBorderPaint, nowPriceLinePaint;
   final KChartStyle chartStyle;
   final bool hideGrid;
   final bool showNowPrice;
+  final VerticalTextAlignment verticalTextAlignment;
   final BaseDimension baseDimension;
 
   ChartPainter(
     this.chartStyle,
     this.chartColors, {
+    required this.lines, //For TrendLine
+    required this.isTrendLine, //For TrendLine
+    required this.selectY, //For TrendLine
     required this.sink,
     required datas,
     required scaleX,
     required scrollX,
-    required interactionMode,
+    required isLongPass,
     required selectX,
     required xFrontPadding,
     required this.baseDimension,
+    isOnTap,
+    isTapShowInfoDialog,
+    required this.verticalTextAlignment,
     mainIndicators,
     volHidden,
     secondaryIndicators,
@@ -53,26 +79,28 @@ class ChartPainter extends BaseChartPainter {
             datas: datas,
             scaleX: scaleX,
             scrollX: scrollX,
-            interactionMode: interactionMode,
+            isLongPress: isLongPass,
             baseDimension: baseDimension,
+            isOnTap: isOnTap,
+            isTapShowInfoDialog: isTapShowInfoDialog,
             selectX: selectX,
             mainIndicators: mainIndicators,
             volHidden: volHidden,
             secondaryIndicators: secondaryIndicators,
             xFrontPadding: xFrontPadding,
             isLine: isLine) {
-    crossLinePaint = Paint()
+    paintCross = Paint()
       ..color = this.chartColors.crossColor
       ..strokeWidth = this.chartStyle.crossWidth
       ..isAntiAlias = true;
     selectPointPaint = Paint()
       ..isAntiAlias = true
-      ..color = this.chartColors.crossBgColor;
+      ..color = this.chartColors.selectFillColor;
     selectorBorderPaint = Paint()
       ..isAntiAlias = true
       ..strokeWidth = this.chartStyle.borderWidth
       ..style = PaintingStyle.stroke
-      ..color = this.chartColors.crossBgColor;
+      ..color = this.chartColors.selectBorderColor;
 
     nowPriceSelectorPaint = Paint()
       ..color = this.chartColors.bgColor
@@ -103,6 +131,7 @@ class ChartPainter extends BaseChartPainter {
       this.chartStyle,
       this.chartColors,
       this.scaleX,
+      verticalTextAlignment,
       mBottomPadding,
     );
     if (mVolRect != null) {
@@ -114,7 +143,6 @@ class ChartPainter extends BaseChartPainter {
         fixedLength,
         this.chartStyle,
         this.chartColors,
-        scaleX: this.scaleX,
       );
     }
     mSecondaryRendererList.clear();
@@ -127,8 +155,7 @@ class ChartPainter extends BaseChartPainter {
         secondaryIndicators[i],
         fixedLength,
         chartStyle,
-        chartColors,
-        scaleX: scaleX,
+        chartColors
       ));
     }
   }
@@ -176,9 +203,8 @@ class ChartPainter extends BaseChartPainter {
   @override
   void drawChart(Canvas canvas, Size size) {
     canvas.save();
-    // Zoom is baked into the x math (mPointWidth is already scaled), so the
-    // canvas only pans. Nothing drawn below gets stretched horizontally.
-    canvas.translate(mTranslateX, 0.0);
+    canvas.translate(mTranslateX * scaleX, 0.0);
+    canvas.scale(scaleX, 1.0);
     for (int i = mStartIndex; datas != null && i <= mStopIndex; i++) {
       KLineEntity? curPoint = datas?[i];
       if (curPoint == null) continue;
@@ -192,9 +218,10 @@ class ChartPainter extends BaseChartPainter {
       });
     }
 
-    if (interactionMode == InteractionMode.crosshair) {
+    if ((isLongPress == true || (isTapShowInfoDialog && isOnTap)) && isTrendLine == false) {
       drawCrossLine(canvas, size);
     }
+    if (isTrendLine == true) drawTrendLines(canvas, size);
     canvas.restore();
   }
 
@@ -341,7 +368,7 @@ class ChartPainter extends BaseChartPainter {
   @override
   void drawText(Canvas canvas, KLineEntity data, double x) {
     //Long press to display the data in the press
-    if (interactionMode == InteractionMode.crosshair) {
+    if (isLongPress || (isTapShowInfoDialog && isOnTap)) {
       var index = calculateSelectedX(selectX);
       data = getItem(index);
     }
@@ -420,53 +447,122 @@ class ChartPainter extends BaseChartPainter {
     nowPriceSelectorBorderPaint.color = priceColor;
     nowPriceLinePaint.color = priceColor;
 
-    // The latest candle may have scrolled out of the visible range; when
-    // that happens there's no on-screen x left to anchor the line to.
-    int lastIndex = datas!.length - 1;
-    bool isLastCandleVisible = lastIndex <= mStopIndex;
-    double lineStartX = isLastCandleVisible ? translateXtoX(getX(lastIndex)) : 0;
-
     //first draw the horizontal line
-    // Drawn outside the pan transform: plain screen coordinates.
     canvas.drawDashLine(
-      Offset(lineStartX, y),
-      Offset(mWidth, y),
+      Offset(0, y),
+      Offset(-mTranslateX + mWidth / scaleX, y),
       nowPriceLinePaint,
     );
 
-    //repaint the background and text
-    /*String priceText = NumberUtil.formatFixed(value, fixedLength) ?? '';
-    TextPainter tp = getTextPainter(
-      isLastCandleVisible ? priceText : '$priceText ›',
-      priceColor,
-    );
+    // //repaint the background and text
+    // TextPainter tp = getTextPainter(
+    //   NumberUtil.formatFixed(value, fixedLength) ?? '',
+    //   priceColor,
+    // );
+    //
+    // double paddingX = 3, paddingY = 1.5;
+    // double space = 5.0;
+    // double offsetX;
+    // switch (verticalTextAlignment) {
+    //   case VerticalTextAlignment.left:
+    //     // offsetX = paddingX;
+    //     offsetX = space;
+    //     break;
+    //   case VerticalTextAlignment.right:
+    //     offsetX = mWidth - tp.width - paddingX * 2 - space;
+    //     break;
+    // }
+    //
+    // double top = y - tp.height / 2;
+    // RRect rect = RRect.fromLTRBR(
+    //   offsetX,
+    //   top - paddingY,
+    //   offsetX + tp.width + paddingX * 2,
+    //   top + tp.height + paddingY * 2,
+    //   Radius.circular(2.0),
+    // );
+    // canvas.drawRRect(
+    //   rect,
+    //   nowPriceSelectorPaint,
+    // );
+    // canvas.drawRRect(
+    //   rect,
+    //   nowPriceSelectorBorderPaint,
+    // );
+    // tp.paint(
+    //   canvas,
+    //   Offset(offsetX + paddingX, top),
+    // );
+  }
 
-    double paddingX = 3, paddingY = 1.5;
-    double space = 5.0;
+  //For TrendLine
+  void drawTrendLines(Canvas canvas, Size size) {
+    var index = calculateSelectedX(selectX);
+    Paint paintY = Paint()
+      ..color = chartColors.trendLineColor
+      ..strokeWidth = 1
+      ..isAntiAlias = true;
+    double x = getX(index);
+    trendLineX = x;
 
-    // VerticalTextAlignment.right
-    double offsetX = mWidth - tp.width - paddingX * 2 - space;
+    double y = selectY;
+    // getMainY(point.close);
 
-    double top = y - tp.height / 2;
-    RRect rect = RRect.fromLTRBR(
-      offsetX,
-      top - paddingY,
-      offsetX + tp.width + paddingX * 2,
-      top + tp.height + paddingY * 2,
-      Radius.circular(2.0),
+    // K-line chart vertical line
+    canvas.drawLine(
+      Offset(x, mTopPadding),
+      Offset(x, size.height),
+      paintY,
     );
-    canvas.drawRRect(
-      rect,
-      nowPriceSelectorPaint,
+    Paint paintX = Paint()
+      ..color = chartColors.trendLineColor
+      ..strokeWidth = 1
+      ..isAntiAlias = true;
+    Paint paint = Paint()
+      ..color = chartColors.trendLineColor
+      ..strokeWidth = 1.0
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(
+      Offset(-mTranslateX, y),
+      Offset(-mTranslateX + mWidth / scaleX, y),
+      paintX,
     );
-    canvas.drawRRect(
-      rect,
-      nowPriceSelectorBorderPaint,
-    );
-    tp.paint(
-      canvas,
-      Offset(offsetX + paddingX, top),
-    );*/
+    if (scaleX >= 1) {
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: Offset(x, y),
+          height: 15.0 * scaleX,
+          width: 15.0,
+        ),
+        paint,
+      );
+    } else {
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: Offset(x, y),
+          height: 10.0,
+          width: 10.0 / scaleX,
+        ),
+        paint,
+      );
+    }
+    if (lines.isNotEmpty) {
+      lines.forEach((element) {
+        var y1 = -((element.p1.dy - 35) / element.scale) + element.maxHeight;
+        var y2 = -((element.p2.dy - 35) / element.scale) + element.maxHeight;
+        var a = (trendLineMax! - y1) * trendLineScale! + trendLineContentRec!;
+        var b = (trendLineMax! - y2) * trendLineScale! + trendLineContentRec!;
+        var p1 = Offset(element.p1.dx, a);
+        var p2 = Offset(element.p2.dx, b);
+        canvas.drawLine(
+          p1,
+          element.p2 == Offset(-1, -1) ? Offset(x, y) : p2,
+          Paint()
+            ..color = Colors.yellow
+            ..strokeWidth = 2);
+      });
+    }
   }
 
   ///draw cross lines
@@ -480,23 +576,27 @@ class ChartPainter extends BaseChartPainter {
     canvas.drawDashLine(
       Offset(x, 0),
       Offset(x, size.height),
-      crossLinePaint,
+      paintCross,
     );
 
     // K-line chart horizontal line
     canvas.drawDashLine(
       Offset(-mTranslateX, y),
-      Offset(-mTranslateX + mWidth, y),
-      crossLinePaint,
+      Offset(-mTranslateX + mWidth / scaleX, y),
+      paintCross,
     );
 
-    // The canvas is no longer scaled, so a plain circle stays a circle at
-    // any zoom level.
-    canvas.drawCircle(
-      Offset(x, y),
-      this.chartStyle.crossRadius,
-      crossLinePaint,
-    );
+    if (scaleX >= 1) {
+      canvas.drawOval(
+        Rect.fromCenter(center: Offset(x, y), height: 4.0 * scaleX, width: 4.0),
+        paintCross,
+      );
+    } else {
+      canvas.drawOval(
+        Rect.fromCenter(center: Offset(x, y), height: 4.0, width: 4.0 / scaleX),
+        paintCross,
+      );
+    }
   }
 
   TextPainter getTextPainter(text, color) {

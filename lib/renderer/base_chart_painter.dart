@@ -6,14 +6,6 @@ import '../styles/k_chart_style.dart' show KChartStyle;
 import '../entity/k_line_entity.dart';
 import 'base_dimension.dart';
 
-
-enum InteractionMode {
-  /// No active interaction is occurring
-  none,
-  /// User is interacting with the crosshair
-  crosshair,
-}
-
 /// BaseChartPainter
 abstract class BaseChartPainter extends CustomPainter {
   static double maxScrollX = 0.0;
@@ -24,8 +16,10 @@ abstract class BaseChartPainter extends CustomPainter {
   List<SecondaryIndicator> secondaryIndicators;
 
   bool volHidden;
+  bool isTapShowInfoDialog;
   double scaleX = 1.0, scrollX = 0.0, selectX;
-  InteractionMode interactionMode;
+  bool isLongPress = false;
+  bool isOnTap;
   bool isLine;
 
   late Rect mMainLabelRect;
@@ -71,21 +65,19 @@ abstract class BaseChartPainter extends CustomPainter {
     this.datas,
     required this.scaleX,
     required this.scrollX,
-    required this.interactionMode,
+    required this.isLongPress,
     required this.selectX,
     required this.xFrontPadding,
     required this.baseDimension,
+    this.isOnTap = false,
     this.mainIndicators = const [],
     this.volHidden = false,
+    this.isTapShowInfoDialog = false,
     this.secondaryIndicators = const [],
     this.isLine = false,
   }) {
     mItemCount = datas?.length ?? 0;
-    // Effective step between two data points in screen pixels. Zoom is
-    // expressed by widening/narrowing this step instead of canvas.scale, so
-    // strokes, dots and dash patterns keep their intended size (see
-    // ChartPainter.drawChart).
-    mPointWidth = this.chartStyle.pointWidth * scaleX;
+    mPointWidth = this.chartStyle.pointWidth;
     mTopPadding = this.chartStyle.topPadding + baseDimension.totalLabelHeight; // space to display text of main chart
     mBottomPadding = this.chartStyle.bottomPadding;
     mChildPadding = this.chartStyle.childPadding;
@@ -146,7 +138,7 @@ abstract class BaseChartPainter extends CustomPainter {
       drawMaxAndMin(canvas);
       drawNowPrice(canvas);
 
-      if (interactionMode == InteractionMode.crosshair) {
+      if (isLongPress == true || (isTapShowInfoDialog && isOnTap)) {
         drawCrossLineText(canvas, size);
       }
     }
@@ -230,12 +222,6 @@ abstract class BaseChartPainter extends CustomPainter {
     if (datas == null) return;
     if (datas!.isEmpty) return;
     maxScrollX = getMinTranslateX().abs();
-
-    // scrollX can be stale relative to the just-updated scaleX (e.g. right
-    // after a pinch-zoom), so re-clamp it here to the bounds computed for
-    // this frame instead of trusting the caller.
-    scrollX = scrollX.clamp(0.0, maxScrollX).toDouble();
-
     setTranslateXFromScrollX(scrollX);
     mStartIndex = indexOfTranslateX(xToTranslateX(0));
     mStopIndex = indexOfTranslateX(xToTranslateX(mWidth));
@@ -302,7 +288,7 @@ abstract class BaseChartPainter extends CustomPainter {
   }
 
   // translate x
-  double xToTranslateX(double x) => -mTranslateX + x;
+  double xToTranslateX(double x) => -mTranslateX + x / scaleX;
 
   int indexOfTranslateX(double translateX) => _indexOfTranslateX(translateX, 0, mItemCount - 1);
 
@@ -346,12 +332,9 @@ abstract class BaseChartPainter extends CustomPainter {
   /// scrollX convert to TranslateX
   void setTranslateXFromScrollX(double scrollX) => mTranslateX = scrollX + getMinTranslateX();
 
-  /// get the minimum value of translation (screen pixels)
-  /// mDataLen/mPointWidth are already scaled; xFrontPadding is kept in data
-  /// units so the front gap zooms together with the candles like before.
+  /// get the minimum value of translation
   double getMinTranslateX() {
-    // var x = -mDataLen + mWidth - mPointWidth / 2 - xFrontPadding * scaleX;
-    var x = -mDataLen + mWidth - mPointWidth / 2 - xFrontPadding;
+    var x = -mDataLen + mWidth / scaleX - mPointWidth / 2 - xFrontPadding;
     return x >= 0 ? 0.0 : x;
   }
 
@@ -368,7 +351,7 @@ abstract class BaseChartPainter extends CustomPainter {
   }
 
   /// translateX is converted to X in view
-  double translateXtoX(double translateX) => translateX + mTranslateX;
+  double translateXtoX(double translateX) => (translateX + mTranslateX) * scaleX;
 
   /// define text style
   TextStyle getTextStyle(Color color) {

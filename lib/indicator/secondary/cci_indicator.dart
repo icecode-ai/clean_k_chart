@@ -94,7 +94,7 @@ class CCIIndicator extends SecondaryIndicator<MACDEntity, CCIStyle> {
   }
 
   @override
-  void drawChart(MACDEntity lastPoint, MACDEntity curPoint, double lastX, double curX, GetYFunction getY, Canvas canvas, KChartColors chartColors, double scaleX) {
+  void drawChart(MACDEntity lastPoint, MACDEntity curPoint, double lastX, double curX, GetYFunction getY, Canvas canvas, KChartColors chartColors) {
     if (curPoint.cci == null || lastPoint.cci == null) return;
     canvas.drawLine(
       Offset(curX, getY(curPoint.cci!)),

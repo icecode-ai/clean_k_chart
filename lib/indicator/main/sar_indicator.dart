@@ -39,7 +39,7 @@ class SARIndicator extends MainIndicator<CandleEntity, SARStyle> {
   }
 
   @override
-  void drawChart(CandleEntity lastPoint, CandleEntity curPoint, double lastX, double curX, GetYFunction getY, Canvas canvas, KChartColors chartColors, double scaleX) {
+  void drawChart(CandleEntity lastPoint, CandleEntity curPoint, double lastX, double curX, GetYFunction getY, Canvas canvas, KChartColors chartColors) {
     final sar = curPoint.sar;
     if (sar == null) return;
     final halfHL = (curPoint.high + curPoint.low) / 2;
@@ -51,8 +51,6 @@ class SARIndicator extends MainIndicator<CandleEntity, SARStyle> {
     } else {
       color = chartColors.dnColor;
     }
-    // The canvas is never scaled horizontally anymore, so a plain circle
-    // keeps its shape at any zoom level.
     canvas.drawCircle(
       Offset(curX, getY(sar)),
       indicatorStyle.radius,

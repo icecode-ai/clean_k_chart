@@ -4,6 +4,13 @@ import '../entity/candle_entity.dart';
 import '../utils/number_util.dart';
 import 'base_chart_renderer.dart';
 
+enum VerticalTextAlignment { left, right }
+
+//For TrendLine
+double? trendLineMax;
+double? trendLineScale;
+double? trendLineContentRec;
+
 class MainRenderer extends BaseChartRenderer<CandleEntity> {
   late double mCandleWidth;
   late double mCandleLineWidth;
@@ -18,6 +25,7 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
   final double mLineStrokeWidth = 1.0;
   double scaleX;
   late Paint mLinePaint;
+  final VerticalTextAlignment verticalTextAlignment;
   final double mBottomPadding;
 
   MainRenderer(
@@ -31,6 +39,7 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
     this.chartStyle,
     this.chartColors,
     this.scaleX,
+    this.verticalTextAlignment,
     this.mBottomPadding,
   ) : super(
     chartRect: mainRect,
@@ -100,7 +109,7 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
 
       /// draw chart main state
       for (int i = 0; i < indicatorLi.length; ++i) {
-        indicatorLi[i].drawChart(lastPoint, curPoint, lastX, curX, getY, canvas, chartColors, scaleX);
+        indicatorLi[i].drawChart(lastPoint, curPoint, lastX, curX, getY, canvas, chartColors);
       }
     }
   }
@@ -170,7 +179,7 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
 
     canvas.drawPath(
       mLinePath!,
-      mLinePaint..strokeWidth = mLineStrokeWidth,
+      mLinePaint..strokeWidth = (mLineStrokeWidth / scaleX).clamp(0.1, 1.0),
     );
     mLinePath!.reset();
   }
@@ -180,10 +189,8 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
     var low = getY(curPoint.low);
     var open = getY(curPoint.open);
     var close = getY(curPoint.close);
-    // Horizontal sizes follow the zoom explicitly (the canvas itself is not
-    // scaled); vertical minimum-body checks below stay in plain pixels.
-    double r = mCandleWidth / 2 * scaleX;
-    double lineR = mCandleLineWidth / 2 * scaleX;
+    double r = mCandleWidth / 2;
+    double lineR = mCandleLineWidth / 2;
     if (open >= close) {
       // 实体高度>= CandleLineWidth
       if (open - close < mCandleLineWidth) {
@@ -227,8 +234,15 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
       TextPainter tp = TextPainter(text: span, textDirection: TextDirection.ltr);
       tp.layout();
 
-      // VerticalTextAlignment.right
-      double offsetX = chartRect.width - tp.width - this.chartStyle.space;
+      double offsetX;
+      switch (verticalTextAlignment) {
+        case VerticalTextAlignment.left:
+          offsetX = this.chartStyle.space;
+          break;
+        case VerticalTextAlignment.right:
+          offsetX = chartRect.width - tp.width - this.chartStyle.space;
+          break;
+      }
 
       if (i == 0) {
         tp.paint(canvas, Offset(offsetX, topPadding));
@@ -277,6 +291,14 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
 
   @override
   double getY(double y) {
+    //For TrendLine
+    updateTrendLineData();
     return (maxValue - y) * scaleY + _contentRect.top;
+  }
+
+  void updateTrendLineData() {
+    trendLineMax = maxValue;
+    trendLineScale = scaleY;
+    trendLineContentRec = _contentRect.top;
   }
 }

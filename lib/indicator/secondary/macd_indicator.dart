@@ -111,13 +111,12 @@ class MACDIndicator extends SecondaryIndicator<MACDEntity, MACDStyle> {
   }
 
   @override
-  void drawChart(MACDEntity lastPoint, MACDEntity curPoint, double lastX, double curX, GetYFunction getY, Canvas canvas, KChartColors chartColors, double scaleX) {
+  void drawChart(MACDEntity lastPoint, MACDEntity curPoint, double lastX, double curX, GetYFunction getY, Canvas canvas, KChartColors chartColors) {
     final prevMacd = lastPoint.macd;
     final macd = curPoint.macd;
     if (curPoint.macd != null) {
       final mMACDWidth = indicatorStyle.macdWidth;
-      // Bar width follows the zoom explicitly (the canvas is not scaled).
-      double r = mMACDWidth / 2 * scaleX;
+      double r = mMACDWidth / 2;
       double zeroy = getY(0);
       double macdY = getY(macd!);
       _rectPaint.style = (prevMacd == null || prevMacd <= macd) ? PaintingStyle.stroke : PaintingStyle.fill;

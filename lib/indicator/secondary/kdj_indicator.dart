@@ -93,7 +93,7 @@ class KDJIndicator extends SecondaryIndicator<MACDEntity, KDJStyle> {
   }
 
   @override
-  void drawChart(MACDEntity lastPoint, MACDEntity curPoint, double lastX, double curX, GetYFunction getY, Canvas canvas, KChartColors chartColors, double scaleX) {
+  void drawChart(MACDEntity lastPoint, MACDEntity curPoint, double lastX, double curX, GetYFunction getY, Canvas canvas, KChartColors chartColors) {
     if (curPoint.k != null || lastPoint.k != null) {
       canvas.drawLine(
         Offset(curX, getY(curPoint.k!)),
