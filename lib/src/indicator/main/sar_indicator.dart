@@ -1,28 +1,17 @@
 import 'dart:math';
 
-import 'package:clean_k_chart/src/entity/candle_entity.dart';
-import 'package:clean_k_chart/src/entity/k_line_entity.dart';
-import 'package:clean_k_chart/src/indicator/indicator_style.dart';
-import 'package:clean_k_chart/src/indicator/indicator_template.dart';
-import 'package:clean_k_chart/src/styles/k_chart_style.dart' show KChartColors;
-import 'package:flutter/painting.dart';
+import 'package:clean_k_chart/src/model/entity/candle_entity.dart';
+import 'package:clean_k_chart/src/model/entity/k_line_entity.dart';
+import 'package:clean_k_chart/src/style/indicator_style.dart';
+import 'package:clean_k_chart/src/indicator/indicator.dart';
 
 class SARIndicator extends MainIndicator<CandleEntity, SARStyle> {
-  late final Paint _dotPaint;
-
-  SARIndicator({SARStyle indicatorStyle = const SARStyle()})
+  SARIndicator({super.indicatorStyle = const SARStyle()})
     : super(
         name: 'stopAndReverse',
         shortName: 'SAR',
         calcParams: const [2, 2, 20],
-        indicatorStyle: indicatorStyle,
-      ) {
-    _dotPaint = Paint()
-      ..isAntiAlias = true
-      ..filterQuality = FilterQuality.high
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = indicatorStyle.strokeWidth;
-  }
+      );
 
   @override
   (double, double) getMaxMinValue(
@@ -32,48 +21,6 @@ class SARIndicator extends MainIndicator<CandleEntity, SARStyle> {
   ) {
     if (entity.sar == null) return (minV, maxV);
     return (min(entity.sar!, minV), max(entity.sar!, maxV));
-  }
-
-  @override
-  TextSpan? drawFigure(
-    CandleEntity entity,
-    int precision,
-    KChartColors chartColors,
-  ) {
-    double? value = entity.sar;
-    if (value == null) return null;
-    return TextSpan(
-      text: "SAR: ${formatNumber(value, precision)}",
-      style: TextStyle(fontSize: 10, color: indicatorStyle.sarColor),
-    );
-  }
-
-  @override
-  void drawChart(
-    CandleEntity lastPoint,
-    CandleEntity curPoint,
-    double lastX,
-    double curX,
-    GetYFunction getY,
-    Canvas canvas,
-    KChartColors chartColors,
-  ) {
-    final sar = curPoint.sar;
-    if (sar == null) return;
-    final halfHL = (curPoint.high + curPoint.low) / 2;
-    late final color;
-    if (sar == halfHL) {
-      color = chartColors.defaultTextColor;
-    } else if (sar < halfHL) {
-      color = chartColors.upColor;
-    } else {
-      color = chartColors.dnColor;
-    }
-    canvas.drawCircle(
-      Offset(curX, getY(sar)),
-      indicatorStyle.radius,
-      _dotPaint..color = color,
-    );
   }
 
   @override
@@ -97,9 +44,9 @@ class SARIndicator extends MainIndicator<CandleEntity, SARStyle> {
       final low = dataList[i].low;
 
       if (isIncreasing) {
-        // Uptrend
+        // uptrend
         if (ep == -100 || ep < high) {
-          // Reinitialize parameters
+          // reinitialize parameters
           ep = high;
           af = min(af + step, maxAf);
         }
@@ -107,7 +54,7 @@ class SARIndicator extends MainIndicator<CandleEntity, SARStyle> {
         final lowMin = min(dataList[max(1, i) - 1].low, low);
         if (sar > dataList[i].low) {
           sar = ep;
-          // Reinitialize parameters
+          // reinitialize parameters
           af = startAf;
           ep = -100;
           isIncreasing = !isIncreasing;
@@ -116,7 +63,7 @@ class SARIndicator extends MainIndicator<CandleEntity, SARStyle> {
         }
       } else {
         if (ep == -100 || ep > low) {
-          // Reinitialize parameters
+          // reinitialize parameters
           ep = low;
           af = min(af + step, maxAf);
         }
@@ -124,7 +71,7 @@ class SARIndicator extends MainIndicator<CandleEntity, SARStyle> {
         final highMax = max(dataList[max(1, i) - 1].high, high);
         if (sar < dataList[i].high) {
           sar = ep;
-          // Reinitialize parameters
+          // reinitialize parameters
           af = 0;
           ep = -100;
           isIncreasing = !isIncreasing;

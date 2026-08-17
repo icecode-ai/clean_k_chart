@@ -1,7 +1,7 @@
-import 'package:clean_k_chart/src/entity/volume_entity.dart';
-import 'package:clean_k_chart/src/extension/num_ext.dart';
-import 'package:clean_k_chart/src/renderer/base_chart_renderer.dart';
-import 'package:clean_k_chart/src/styles/k_chart_style.dart';
+import 'package:clean_k_chart/src/model/entity/volume_entity.dart';
+import 'package:clean_k_chart/src/utils/extension/num_ext.dart';
+import 'package:clean_k_chart/src/render/renderer/base_chart_renderer.dart';
+import 'package:clean_k_chart/src/style/k_chart_style.dart';
 import 'package:clean_k_chart/src/utils/number_util.dart';
 import 'package:flutter/material.dart';
 

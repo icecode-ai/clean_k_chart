@@ -1,4 +1,4 @@
-import 'package:clean_k_chart/src/entity/k_line_entity.dart';
+import 'package:clean_k_chart/src/model/entity/k_line_entity.dart';
 
 class InfoWindowEntity {
   KLineEntity kLineEntity;

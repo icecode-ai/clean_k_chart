@@ -1,7 +1,9 @@
-import 'package:clean_k_chart/src/entity/candle_entity.dart';
-import 'package:clean_k_chart/src/indicator/indicator_template.dart';
-import 'package:clean_k_chart/src/renderer/base_chart_renderer.dart';
-import 'package:clean_k_chart/src/styles/k_chart_style.dart';
+import 'package:clean_k_chart/src/model/entity/candle_entity.dart';
+import 'package:clean_k_chart/src/indicator/indicator.dart';
+import 'package:clean_k_chart/src/render/indicator_view/indicator_painter.dart';
+import 'package:clean_k_chart/src/render/indicator_view/indicator_painter_factory.dart';
+import 'package:clean_k_chart/src/render/renderer/base_chart_renderer.dart';
+import 'package:clean_k_chart/src/style/k_chart_style.dart';
 import 'package:clean_k_chart/src/utils/number_util.dart';
 import 'package:flutter/material.dart';
 
@@ -16,6 +18,7 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
   late double mCandleWidth;
   late double mCandleLineWidth;
   List<MainIndicator> indicatorLi;
+  late final List<IndicatorPainter> indicatorPainters;
   bool isLine;
 
   //绘制的内容区域
@@ -52,6 +55,9 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
       ) {
     mCandleWidth = this.chartStyle.candleWidth;
     mCandleLineWidth = this.chartStyle.candleLineWidth;
+    indicatorPainters = indicatorLi
+        .map(IndicatorPainterFactory.create)
+        .toList();
     mLinePaint = Paint()
       ..isAntiAlias = true
       ..style = PaintingStyle.stroke
@@ -74,8 +80,8 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
   void drawText(Canvas canvas, CandleEntity data, double x) {
     if (isLine == true) return;
     double y = chartStyle.indicatorTopMargin;
-    for (int i = 0; i < indicatorLi.length; ++i) {
-      TextSpan? span = indicatorLi[i].drawFigure(
+    for (int i = 0; i < indicatorPainters.length; ++i) {
+      TextSpan? span = indicatorPainters[i].drawFigure(
         data,
         fixedLength,
         chartColors,
@@ -120,8 +126,8 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
       drawCandle(curPoint, canvas, curX);
 
       /// draw chart main state
-      for (int i = 0; i < indicatorLi.length; ++i) {
-        indicatorLi[i].drawChart(
+      for (int i = 0; i < indicatorPainters.length; ++i) {
+        indicatorPainters[i].drawChart(
           lastPoint,
           curPoint,
           lastX,

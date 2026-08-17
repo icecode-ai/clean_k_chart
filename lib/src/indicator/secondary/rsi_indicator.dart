@@ -1,32 +1,21 @@
 import 'dart:math';
 
-import 'package:clean_k_chart/src/entity/k_line_entity.dart';
-import 'package:clean_k_chart/src/entity/macd_entity.dart';
-import 'package:clean_k_chart/src/indicator/indicator_style.dart';
-import 'package:clean_k_chart/src/indicator/indicator_template.dart';
-import 'package:clean_k_chart/src/styles/k_chart_style.dart' show KChartColors;
-import 'package:clean_k_chart/src/utils/number_util.dart';
-import 'package:flutter/painting.dart';
+import 'package:clean_k_chart/src/model/entity/k_line_entity.dart';
+import 'package:clean_k_chart/src/model/entity/macd_entity.dart';
+import 'package:clean_k_chart/src/style/indicator_style.dart';
+import 'package:clean_k_chart/src/indicator/indicator.dart';
 
 /**
  * RSI
  * RSI = SUM(MAX(CLOSE - REF(CLOSE,1),0),N) / SUM(ABS(CLOSE - REF(CLOSE,1)),N) × 100
  */
 class RSIIndicator extends SecondaryIndicator<MACDEntity, RSIStyle> {
-  late final Paint _linePaint;
-
-  RSIIndicator({RSIStyle indicatorStyle = const RSIStyle()})
+  RSIIndicator({super.indicatorStyle = const RSIStyle()})
     : super(
         name: 'relativeStrengthIndex',
         shortName: 'RSI',
         calcParams: const [6, 12, 24],
-        indicatorStyle: indicatorStyle,
-      ) {
-    _linePaint = Paint()
-      ..isAntiAlias = true
-      ..filterQuality = FilterQuality.high
-      ..strokeWidth = indicatorStyle.lineWidth;
-  }
+      );
 
   @override
   (double, double) getMaxMinValue(
@@ -39,70 +28,6 @@ class RSIIndicator extends SecondaryIndicator<MACDEntity, RSIStyle> {
       maxV = max(maxV, entity.rsi!);
     }
     return (minV, maxV);
-  }
-
-  @override
-  TextSpan? drawFigure(
-    MACDEntity entity,
-    int precision,
-    KChartColors chartColors,
-  ) {
-    if (entity.rsi == null) return null;
-    return TextSpan(
-      text: "RSI(14):${formatNumber(entity.rsi!, precision)}",
-      style: getTextStyle(indicatorStyle.rsiColor),
-    );
-  }
-
-  @override
-  void drawVerticalText({
-    required Canvas canvas,
-    required TextStyle style,
-    required double maxValue,
-    required double minValue,
-    required int fixedLength,
-    required Rect chartRect,
-  }) {
-    TextPainter maxTp = TextPainter(
-      text: TextSpan(
-        text: "${NumberUtil.formatFixed(maxValue, fixedLength) ?? ''}",
-        style: style,
-      ),
-      textDirection: TextDirection.ltr,
-    );
-    maxTp.layout();
-    TextPainter minTp = TextPainter(
-      text: TextSpan(
-        text: "${NumberUtil.formatFixed(minValue, fixedLength) ?? ''}",
-        style: style,
-      ),
-      textDirection: TextDirection.ltr,
-    );
-    minTp.layout();
-
-    maxTp.paint(canvas, Offset(chartRect.width - maxTp.width, chartRect.top));
-    minTp.paint(
-      canvas,
-      Offset(chartRect.width - minTp.width, chartRect.bottom - minTp.height),
-    );
-  }
-
-  @override
-  void drawChart(
-    MACDEntity lastPoint,
-    MACDEntity curPoint,
-    double lastX,
-    double curX,
-    GetYFunction getY,
-    Canvas canvas,
-    KChartColors chartColors,
-  ) {
-    if (curPoint.rsi == null || lastPoint.rsi == null) return;
-    canvas.drawLine(
-      Offset(curX, getY(curPoint.rsi!)),
-      Offset(lastX, getY(lastPoint.rsi!)),
-      _linePaint..color = indicatorStyle.rsiColor,
-    );
   }
 
   @override

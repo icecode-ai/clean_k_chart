@@ -1,11 +1,14 @@
-import 'package:clean_k_chart/src/entity/macd_entity.dart';
-import 'package:clean_k_chart/src/indicator/indicator_template.dart';
-import 'package:clean_k_chart/src/renderer/base_chart_renderer.dart';
-import 'package:clean_k_chart/src/styles/k_chart_style.dart';
+import 'package:clean_k_chart/src/model/entity/macd_entity.dart';
+import 'package:clean_k_chart/src/indicator/indicator.dart';
+import 'package:clean_k_chart/src/render/indicator_view/indicator_painter.dart';
+import 'package:clean_k_chart/src/render/indicator_view/indicator_painter_factory.dart';
+import 'package:clean_k_chart/src/render/renderer/base_chart_renderer.dart';
+import 'package:clean_k_chart/src/style/k_chart_style.dart';
 import 'package:flutter/material.dart';
 
 class SecondaryRenderer extends BaseChartRenderer<MACDEntity> {
   SecondaryIndicator indicator;
+  late final SecondaryIndicatorPainter indicatorPainter;
   final KChartStyle chartStyle;
   final KChartColors chartColors;
 
@@ -25,7 +28,10 @@ class SecondaryRenderer extends BaseChartRenderer<MACDEntity> {
         topPadding: topPadding,
         fixedLength: fixedLength,
         gridColor: chartColors.gridColor,
-      );
+      ) {
+    indicatorPainter =
+        IndicatorPainterFactory.create(indicator) as SecondaryIndicatorPainter;
+  }
 
   @override
   void drawChart(
@@ -36,7 +42,7 @@ class SecondaryRenderer extends BaseChartRenderer<MACDEntity> {
     Size size,
     Canvas canvas,
   ) {
-    indicator.drawChart(
+    indicatorPainter.drawChart(
       lastPoint,
       curPoint,
       lastX,
@@ -49,7 +55,11 @@ class SecondaryRenderer extends BaseChartRenderer<MACDEntity> {
 
   @override
   void drawText(Canvas canvas, MACDEntity data, double x) {
-    TextSpan? span = indicator.drawFigure(data, fixedLength, chartColors);
+    TextSpan? span = indicatorPainter.drawFigure(
+      data,
+      fixedLength,
+      chartColors,
+    );
     if (span == null) return;
     TextPainter tp = TextPainter(text: span, textDirection: TextDirection.ltr);
     tp.layout();
@@ -61,7 +71,7 @@ class SecondaryRenderer extends BaseChartRenderer<MACDEntity> {
 
   @override
   void drawVerticalText(canvas, textStyle, int gridRows) {
-    indicator.drawVerticalText(
+    indicatorPainter.drawVerticalText(
       canvas: canvas,
       style: textStyle,
       maxValue: maxValue,

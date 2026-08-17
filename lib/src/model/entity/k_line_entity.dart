@@ -1,5 +1,5 @@
-import 'package:clean_k_chart/src/entity/k_entity.dart';
-import 'package:clean_k_chart/src/extension/map_extension.dart';
+import 'package:clean_k_chart/src/model/entity/k_entity.dart';
+import 'package:clean_k_chart/src/utils/extension/map_extension.dart';
 
 class KLineEntity extends KEntity {
   int? time;

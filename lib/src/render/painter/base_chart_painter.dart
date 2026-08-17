@@ -1,9 +1,9 @@
 import 'dart:math';
 
-import 'package:clean_k_chart/src/entity/k_line_entity.dart';
-import 'package:clean_k_chart/src/indicator/indicator_template.dart';
-import 'package:clean_k_chart/src/renderer/base_dimension.dart';
-import 'package:clean_k_chart/src/styles/k_chart_style.dart' show KChartStyle;
+import 'package:clean_k_chart/src/model/entity/k_line_entity.dart';
+import 'package:clean_k_chart/src/indicator/indicator.dart';
+import 'package:clean_k_chart/src/render/dimension.dart';
+import 'package:clean_k_chart/src/style/k_chart_style.dart' show KChartStyle;
 import 'package:clean_k_chart/src/utils/date_format_util.dart';
 import 'package:flutter/material.dart'
     show Color, TextStyle, Rect, Canvas, Size, CustomPainter;
@@ -184,8 +184,8 @@ abstract class BaseChartPainter extends CustomPainter {
 
   /// init the rectangle box to draw chart
   void initRect(Size size) {
-    double volHeight = baseDimension.mVolumeHeight;
-    double secondaryHeight = baseDimension.mSecondaryHeight;
+    double volHeight = baseDimension.volumeHeight;
+    double secondaryHeight = baseDimension.secondaryHeight;
 
     double mainHeight = mDisplayHeight;
     mainHeight -= volHeight;

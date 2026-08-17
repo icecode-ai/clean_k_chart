@@ -1,7 +1,8 @@
-import 'package:clean_k_chart/src/entity/k_line_entity.dart';
-import 'package:clean_k_chart/src/indicator/indicator_template.dart';
+import 'package:clean_k_chart/src/model/entity/k_line_entity.dart';
+import 'package:clean_k_chart/src/indicator/indicator.dart';
 
-class DataUtil {
+/// Batch runner for indicator calculations over a K-line data list.
+class IndicatorCalculator {
   static calculateAll(
     List<KLineEntity> dataList,
     List<MainIndicator> mainLi,
@@ -27,10 +28,7 @@ class DataUtil {
     });
   }
 
-  static calculateIndicator(
-    List<KLineEntity> dataList,
-    IndicatorTemplate indicator,
-  ) {
+  static calculateIndicator(List<KLineEntity> dataList, Indicator indicator) {
     indicator.calc(dataList);
   }
 

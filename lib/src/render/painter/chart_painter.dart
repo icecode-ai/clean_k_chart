@@ -1,15 +1,15 @@
 import 'dart:async' show StreamSink;
 
-import 'package:clean_k_chart/src/entity/info_window_entity.dart';
-import 'package:clean_k_chart/src/entity/k_line_entity.dart';
-import 'package:clean_k_chart/src/extension/canvas_extension.dart';
-import 'package:clean_k_chart/src/renderer/base_chart_painter.dart';
-import 'package:clean_k_chart/src/renderer/base_chart_renderer.dart';
-import 'package:clean_k_chart/src/renderer/base_dimension.dart';
-import 'package:clean_k_chart/src/renderer/main_renderer.dart';
-import 'package:clean_k_chart/src/renderer/secondary_renderer.dart';
-import 'package:clean_k_chart/src/renderer/vol_renderer.dart';
-import 'package:clean_k_chart/src/styles/k_chart_style.dart';
+import 'package:clean_k_chart/src/model/entity/info_window_entity.dart';
+import 'package:clean_k_chart/src/model/entity/k_line_entity.dart';
+import 'package:clean_k_chart/src/utils/extension/canvas_extension.dart';
+import 'package:clean_k_chart/src/render/painter/base_chart_painter.dart';
+import 'package:clean_k_chart/src/render/renderer/base_chart_renderer.dart';
+import 'package:clean_k_chart/src/render/dimension.dart';
+import 'package:clean_k_chart/src/render/renderer/main_renderer.dart';
+import 'package:clean_k_chart/src/render/renderer/secondary_renderer.dart';
+import 'package:clean_k_chart/src/render/renderer/vol_renderer.dart';
+import 'package:clean_k_chart/src/style/k_chart_style.dart';
 import 'package:clean_k_chart/src/utils/date_format_util.dart';
 import 'package:clean_k_chart/src/utils/number_util.dart';
 import 'package:flutter/material.dart';
@@ -32,17 +32,12 @@ double getTrendLineX() {
 class ChartPainter extends BaseChartPainter {
   final List<TrendLine> lines; //For TrendLine
   final bool isTrendLine; //For TrendLine
-  bool isrecordingCord = false; //For TrendLine
   final double selectY; //For TrendLine
   static get maxScrollX => BaseChartPainter.maxScrollX;
   late BaseChartRenderer mMainRenderer;
   BaseChartRenderer? mVolRenderer;
   Set<BaseChartRenderer> mSecondaryRendererList = {};
   StreamSink<InfoWindowEntity?> sink;
-  Color? upColor, dnColor;
-  Color? ma5Color, ma10Color, ma30Color;
-  Color? volColor;
-  Color? macdColor, difColor, deaColor, jColor;
   int fixedLength;
   final KChartColors chartColors;
   late Paint paintCross, selectPointPaint, selectorBorderPaint;

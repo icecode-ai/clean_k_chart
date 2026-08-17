@@ -1,4 +1,4 @@
-import 'package:clean_k_chart/src/entity/boll_entity.dart';
+import 'package:clean_k_chart/src/model/entity/boll_entity.dart';
 
 mixin CandleEntity {
   late double open;

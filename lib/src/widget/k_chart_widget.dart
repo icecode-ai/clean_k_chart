@@ -1,12 +1,12 @@
 import 'dart:async';
 
-import 'package:clean_k_chart/src/entity/info_window_entity.dart';
-import 'package:clean_k_chart/src/entity/k_line_entity.dart';
-import 'package:clean_k_chart/src/indicator/indicator_template.dart';
-import 'package:clean_k_chart/src/renderer/base_dimension.dart';
-import 'package:clean_k_chart/src/renderer/chart_painter.dart';
-import 'package:clean_k_chart/src/renderer/main_renderer.dart';
-import 'package:clean_k_chart/src/styles/k_chart_style.dart';
+import 'package:clean_k_chart/src/model/entity/info_window_entity.dart';
+import 'package:clean_k_chart/src/model/entity/k_line_entity.dart';
+import 'package:clean_k_chart/src/indicator/indicator.dart';
+import 'package:clean_k_chart/src/render/dimension.dart';
+import 'package:clean_k_chart/src/render/painter/chart_painter.dart';
+import 'package:clean_k_chart/src/render/renderer/main_renderer.dart';
+import 'package:clean_k_chart/src/style/k_chart_style.dart';
 import 'package:clean_k_chart/src/utils/date_format_util.dart';
 import 'package:flutter/material.dart';
 
@@ -45,8 +45,8 @@ class KChartWidget extends StatefulWidget {
   final bool showInfoDialog;
   final bool materialInfoDialog; // Material Style Information Popup
   final List<String> timeFormat;
-  final double mBaseHeight;
-  final double? mSecondaryHeight;
+  final double baseHeight;
+  final double? secondaryHeight;
 
   // It will be called when the screen scrolls to the end.
   // If true, it will be scrolled to the end of the right side of the screen.
@@ -90,8 +90,8 @@ class KChartWidget extends StatefulWidget {
     this.flingCurve = Curves.decelerate,
     this.isOnDrag,
     this.verticalTextAlignment = VerticalTextAlignment.right,
-    this.mBaseHeight = 360,
-    this.mSecondaryHeight,
+    this.baseHeight = 360,
+    this.secondaryHeight,
   });
 
   @override
@@ -146,11 +146,11 @@ class _KChartWidgetState extends State<KChartWidget>
       mScaleX = 0.5;
     }
     final BaseDimension baseDimension = BaseDimension(
-      mBaseHeight: widget.mBaseHeight,
-      mSecondaryHeight: widget.mSecondaryHeight ?? widget.mBaseHeight * .2,
+      baseHeight: widget.baseHeight,
+      secondaryHeight: widget.secondaryHeight ?? widget.baseHeight * .2,
       volHidden: widget.volHidden,
-      secondaryIndicators: widget.secondaryIndicators,
-      mainIndicators: widget.mainIndicators,
+      secondaryCount: widget.secondaryIndicators.length,
+      mainLabelCount: widget.mainIndicators.length,
     );
     final _painter = ChartPainter(
       widget.chartStyle,
@@ -290,7 +290,7 @@ class _KChartWidgetState extends State<KChartWidget>
       child: Stack(
         children: <Widget>[
           CustomPaint(
-            size: Size(double.infinity, baseDimension.mDisplayHeight),
+            size: Size(double.infinity, baseDimension.displayHeight),
             painter: _painter,
           ),
           if (widget.showInfoDialog) _buildInfoDialog(),

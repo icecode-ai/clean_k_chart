@@ -1,76 +1,11 @@
 import 'dart:math';
 
-import 'package:clean_k_chart/src/chart_translations.dart';
-import 'package:clean_k_chart/src/entity/depth_entity.dart';
-import 'package:clean_k_chart/src/extension/canvas_extension.dart';
-import 'package:clean_k_chart/src/styles/depth_chart_style.dart';
+import 'package:clean_k_chart/src/i18n/chart_translations.dart';
+import 'package:clean_k_chart/src/model/entity/depth_entity.dart';
+import 'package:clean_k_chart/src/utils/extension/canvas_extension.dart';
+import 'package:clean_k_chart/src/style/depth_chart_style.dart';
 import 'package:clean_k_chart/src/utils/number_util.dart';
 import 'package:flutter/material.dart';
-
-class DepthChart extends StatefulWidget {
-  final List<DepthEntity> bids, asks;
-  final int baseUnit;
-  final int quoteUnit;
-  final Offset offset;
-  final DepthChartColors chartColors;
-  final DepthChartStyle chartStyle;
-  final DepthChartTranslations chartTranslations;
-
-  DepthChart(
-    this.bids,
-    this.asks,
-    this.chartColors, {
-    this.baseUnit = 2,
-    this.quoteUnit = 6,
-    this.offset = const Offset(8, 0),
-    this.chartTranslations = const DepthChartTranslations(),
-    this.chartStyle = const DepthChartStyle(),
-  });
-
-  @override
-  _DepthChartState createState() => _DepthChartState();
-}
-
-class _DepthChartState extends State<DepthChart> {
-  Offset? pressOffset;
-  bool isLongPress = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onLongPressStart: (details) {
-        pressOffset = details.localPosition;
-        isLongPress = true;
-        setState(() {});
-      },
-      onLongPressMoveUpdate: (details) {
-        pressOffset = details.localPosition;
-        isLongPress = true;
-        setState(() {});
-      },
-      onLongPressEnd: (details) {
-        pressOffset = null;
-        isLongPress = false;
-        setState(() {});
-      },
-      child: CustomPaint(
-        size: Size(double.infinity, double.infinity),
-        painter: DepthChartPainter(
-          widget.bids,
-          widget.asks,
-          pressOffset,
-          isLongPress,
-          widget.baseUnit,
-          widget.quoteUnit,
-          widget.chartColors,
-          widget.chartStyle,
-          widget.offset,
-          widget.chartTranslations,
-        ),
-      ),
-    );
-  }
-}
 
 class DepthChartPainter extends CustomPainter {
   //Buy//Sell
@@ -277,8 +212,6 @@ class DepthChartPainter extends CustomPainter {
     canvas.drawPath(mSellPath!, mSellPathPaint!);
   }
 
-  // int? mLastPosition;
-
   void drawText(Canvas canvas) {
     double value;
     String str;
@@ -420,9 +353,6 @@ class DepthChartPainter extends CustomPainter {
     dx = dx < mWidth * 0.25
         ? dx + offset.dx
         : dx - offset.dx - popupPainter.width;
-    // dy = dy < mDrawHeight / 2
-    //   ? dy + offset.dy
-    //   : dy - offset.dy - popupPainter.height;
     dy = (dy - popupPainter.height / 2).clamp(
       offset.dy,
       mDrawHeight - popupPainter.height - offset.dy,
@@ -482,10 +412,6 @@ class DepthChartPainter extends CustomPainter {
     dx = dx < mWidth * 0.75
         ? dx + offset.dx
         : dx - offset.dx - popupPainter.width;
-    // dx = dx + offset.dx;
-    // dy = dy < mDrawHeight / 2
-    //   ? dy + offset.dy
-    //   : dy - offset.dy - popupPainter.height;
     dy = (dy - popupPainter.height / 2).clamp(
       offset.dy,
       mDrawHeight - popupPainter.height - offset.dy,
