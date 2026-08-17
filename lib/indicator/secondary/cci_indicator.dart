@@ -3,12 +3,13 @@ part of '../indicator_template.dart';
 class CCIIndicator extends SecondaryIndicator<MACDEntity, CCIStyle> {
   late final Paint _linePaint;
 
-  CCIIndicator({ CCIStyle indicatorStyle = const CCIStyle() }): super(
-    name: 'commodityChannelIndex',
-    shortName: 'CCI',
-    calcParams: const [90],
-    indicatorStyle: indicatorStyle,
-  ) {
+  CCIIndicator({CCIStyle indicatorStyle = const CCIStyle()})
+    : super(
+        name: 'commodityChannelIndex',
+        shortName: 'CCI',
+        calcParams: const [90],
+        indicatorStyle: indicatorStyle,
+      ) {
     _linePaint = Paint()
       ..isAntiAlias = true
       ..filterQuality = FilterQuality.high
@@ -16,7 +17,11 @@ class CCIIndicator extends SecondaryIndicator<MACDEntity, CCIStyle> {
   }
 
   @override
-  (double, double) getMaxMinValue(KLineEntity entity, double minV, double maxV) {
+  (double, double) getMaxMinValue(
+    KLineEntity entity,
+    double minV,
+    double maxV,
+  ) {
     if (entity.cci != null) {
       minV = min(minV, entity.cci!);
       maxV = max(maxV, entity.cci!);
@@ -25,7 +30,11 @@ class CCIIndicator extends SecondaryIndicator<MACDEntity, CCIStyle> {
   }
 
   @override
-  TextSpan? drawFigure(MACDEntity entity, int precision, KChartColors chartColors) {
+  TextSpan? drawFigure(
+    MACDEntity entity,
+    int precision,
+    KChartColors chartColors,
+  ) {
     if (entity.cci == null) return null;
     return TextSpan(
       text: "CCI(${calcParams.first}):${formatNumber(entity.cci!, precision)}",
@@ -55,30 +64,20 @@ class CCIIndicator extends SecondaryIndicator<MACDEntity, CCIStyle> {
     /// max
     TextPainter maxTp = TextPainter(
       text: TextSpan(
-        text: "${NumberUtil.formatFixed(
-          (maxValue / jumpValue).round() * jumpValue,
-          0,
-        ) ?? ''}",
+        text:
+            "${NumberUtil.formatFixed((maxValue / jumpValue).round() * jumpValue, 0) ?? ''}",
         style: style,
       ),
       textDirection: TextDirection.ltr,
     );
     maxTp.layout();
-    maxTp.paint(
-      canvas,
-      Offset(
-        chartRect.width - maxTp.width,
-        chartRect.top,
-      ),
-    );
+    maxTp.paint(canvas, Offset(chartRect.width - maxTp.width, chartRect.top));
 
     /// min
     TextPainter minTp = TextPainter(
       text: TextSpan(
-        text: "${NumberUtil.formatFixed(
-          (minValue / jumpValue).round() * jumpValue,
-          0,
-        ) ?? ''}",
+        text:
+            "${NumberUtil.formatFixed((minValue / jumpValue).round() * jumpValue, 0) ?? ''}",
         style: style,
       ),
       textDirection: TextDirection.ltr,
@@ -86,15 +85,20 @@ class CCIIndicator extends SecondaryIndicator<MACDEntity, CCIStyle> {
     minTp.layout();
     minTp.paint(
       canvas,
-      Offset(
-        chartRect.width - minTp.width,
-        chartRect.bottom - minTp.height,
-      ),
+      Offset(chartRect.width - minTp.width, chartRect.bottom - minTp.height),
     );
   }
 
   @override
-  void drawChart(MACDEntity lastPoint, MACDEntity curPoint, double lastX, double curX, GetYFunction getY, Canvas canvas, KChartColors chartColors) {
+  void drawChart(
+    MACDEntity lastPoint,
+    MACDEntity curPoint,
+    double lastX,
+    double curX,
+    GetYFunction getY,
+    Canvas canvas,
+    KChartColors chartColors,
+  ) {
     if (curPoint.cci == null || lastPoint.cci == null) return;
     canvas.drawLine(
       Offset(curX, getY(curPoint.cci!)),
@@ -124,7 +128,11 @@ class CCIIndicator extends SecondaryIndicator<MACDEntity, CCIStyle> {
         });
         final md = sum / periods;
         kline.cci = md != 0 ? ((tp - maTp) / md / 0.015) : 0;
-        final agoTp = (dataList[i - p].high + dataList[i - p].low + dataList[i - p].close) / 3;
+        final agoTp =
+            (dataList[i - p].high +
+                dataList[i - p].low +
+                dataList[i - p].close) /
+            3;
         tpSum -= agoTp;
       }
     }

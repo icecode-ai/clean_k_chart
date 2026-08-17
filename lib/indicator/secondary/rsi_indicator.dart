@@ -7,12 +7,13 @@ part of '../indicator_template.dart';
 class RSIIndicator extends SecondaryIndicator<MACDEntity, RSIStyle> {
   late final Paint _linePaint;
 
-  RSIIndicator({ RSIStyle indicatorStyle = const RSIStyle() }): super(
-    name: 'relativeStrengthIndex',
-    shortName: 'RSI',
-    calcParams: const [6, 12, 24],
-    indicatorStyle: indicatorStyle,
-  ) {
+  RSIIndicator({RSIStyle indicatorStyle = const RSIStyle()})
+    : super(
+        name: 'relativeStrengthIndex',
+        shortName: 'RSI',
+        calcParams: const [6, 12, 24],
+        indicatorStyle: indicatorStyle,
+      ) {
     _linePaint = Paint()
       ..isAntiAlias = true
       ..filterQuality = FilterQuality.high
@@ -20,7 +21,11 @@ class RSIIndicator extends SecondaryIndicator<MACDEntity, RSIStyle> {
   }
 
   @override
-  (double, double) getMaxMinValue(KLineEntity entity, double minV, double maxV) {
+  (double, double) getMaxMinValue(
+    KLineEntity entity,
+    double minV,
+    double maxV,
+  ) {
     if (entity.rsi != null) {
       minV = min(minV, entity.rsi!);
       maxV = max(maxV, entity.rsi!);
@@ -29,7 +34,11 @@ class RSIIndicator extends SecondaryIndicator<MACDEntity, RSIStyle> {
   }
 
   @override
-  TextSpan? drawFigure(MACDEntity entity, int precision, KChartColors chartColors) {
+  TextSpan? drawFigure(
+    MACDEntity entity,
+    int precision,
+    KChartColors chartColors,
+  ) {
     if (entity.rsi == null) return null;
     return TextSpan(
       text: "RSI(14):${formatNumber(entity.rsi!, precision)}",
@@ -63,10 +72,7 @@ class RSIIndicator extends SecondaryIndicator<MACDEntity, RSIStyle> {
     );
     minTp.layout();
 
-    maxTp.paint(
-      canvas,
-      Offset(chartRect.width - maxTp.width, chartRect.top),
-    );
+    maxTp.paint(canvas, Offset(chartRect.width - maxTp.width, chartRect.top));
     minTp.paint(
       canvas,
       Offset(chartRect.width - minTp.width, chartRect.bottom - minTp.height),
@@ -74,7 +80,15 @@ class RSIIndicator extends SecondaryIndicator<MACDEntity, RSIStyle> {
   }
 
   @override
-  void drawChart(MACDEntity lastPoint, MACDEntity curPoint, double lastX, double curX, GetYFunction getY, Canvas canvas, KChartColors chartColors) {
+  void drawChart(
+    MACDEntity lastPoint,
+    MACDEntity curPoint,
+    double lastX,
+    double curX,
+    GetYFunction getY,
+    Canvas canvas,
+    KChartColors chartColors,
+  ) {
     if (curPoint.rsi == null || lastPoint.rsi == null) return;
     canvas.drawLine(
       Offset(curX, getY(curPoint.rsi!)),

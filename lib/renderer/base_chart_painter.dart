@@ -1,9 +1,12 @@
 import 'dart:math';
-import 'package:flutter/material.dart' show Color, TextStyle, Rect, Canvas, Size, CustomPainter;
+
 import 'package:clean_k_chart/indicator/indicator_template.dart';
 import 'package:clean_k_chart/utils/date_format_util.dart';
-import '../styles/k_chart_style.dart' show KChartStyle;
+import 'package:flutter/material.dart'
+    show Color, TextStyle, Rect, Canvas, Size, CustomPainter;
+
 import '../entity/k_line_entity.dart';
+import '../styles/k_chart_style.dart' show KChartStyle;
 import 'base_dimension.dart';
 
 /// BaseChartPainter
@@ -78,7 +81,9 @@ abstract class BaseChartPainter extends CustomPainter {
   }) {
     mItemCount = datas?.length ?? 0;
     mPointWidth = this.chartStyle.pointWidth;
-    mTopPadding = this.chartStyle.topPadding + baseDimension.totalLabelHeight; // space to display text of main chart
+    mTopPadding =
+        this.chartStyle.topPadding +
+        baseDimension.totalLabelHeight; // space to display text of main chart
     mBottomPadding = this.chartStyle.bottomPadding;
     mChildPadding = this.chartStyle.childPadding;
     mGridRows = this.chartStyle.gridRows;
@@ -206,14 +211,19 @@ abstract class BaseChartPainter extends CustomPainter {
 
     mSecondaryRectList.clear();
     for (int i = 0; i < secondaryIndicators.length; ++i) {
-      mSecondaryRectList.add(RenderRect(
-        Rect.fromLTRB(
-          0,
-          mDateRect.bottom + volHeight + i * secondaryHeight + mChildPadding,
-          mWidth,
-          mDateRect.bottom + volHeight + i * secondaryHeight + secondaryHeight,
+      mSecondaryRectList.add(
+        RenderRect(
+          Rect.fromLTRB(
+            0,
+            mDateRect.bottom + volHeight + i * secondaryHeight + mChildPadding,
+            mWidth,
+            mDateRect.bottom +
+                volHeight +
+                i * secondaryHeight +
+                secondaryHeight,
+          ),
         ),
-      ));
+      );
     }
   }
 
@@ -290,7 +300,8 @@ abstract class BaseChartPainter extends CustomPainter {
   // translate x
   double xToTranslateX(double x) => -mTranslateX + x / scaleX;
 
-  int indexOfTranslateX(double translateX) => _indexOfTranslateX(translateX, 0, mItemCount - 1);
+  int indexOfTranslateX(double translateX) =>
+      _indexOfTranslateX(translateX, 0, mItemCount - 1);
 
   /// Using binary search for the index of the current value
   int _indexOfTranslateX(double translateX, int start, int end) {
@@ -301,8 +312,8 @@ abstract class BaseChartPainter extends CustomPainter {
       double startValue = getX(start);
       double endValue = getX(end);
       return (translateX - startValue).abs() < (translateX - endValue).abs()
-        ? start
-        : end;
+          ? start
+          : end;
     }
     int mid = start + (end - start) ~/ 2;
     double midValue = getX(mid);
@@ -330,7 +341,8 @@ abstract class BaseChartPainter extends CustomPainter {
   }
 
   /// scrollX convert to TranslateX
-  void setTranslateXFromScrollX(double scrollX) => mTranslateX = scrollX + getMinTranslateX();
+  void setTranslateXFromScrollX(double scrollX) =>
+      mTranslateX = scrollX + getMinTranslateX();
 
   /// get the minimum value of translation
   double getMinTranslateX() {
@@ -351,7 +363,8 @@ abstract class BaseChartPainter extends CustomPainter {
   }
 
   /// translateX is converted to X in view
-  double translateXtoX(double translateX) => (translateX + mTranslateX) * scaleX;
+  double translateXtoX(double translateX) =>
+      (translateX + mTranslateX) * scaleX;
 
   /// define text style
   TextStyle getTextStyle(Color color) {

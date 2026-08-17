@@ -60,10 +60,7 @@ class KChartColors {
   const KChartColors({
     this.bgColor = const Color(0xffffffff),
     this.kLineColor = const Color(0xff217AFF),
-    this.kLineFillColors = const [
-      Color(0x80217aff),
-      Color(0x00217AFF),
-    ],
+    this.kLineFillColors = const [Color(0x80217aff), Color(0x00217AFF)],
 
     ///
     this.ma5Color = const Color(0xFFFF0000),

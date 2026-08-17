@@ -6,12 +6,12 @@ class EMAIndicator extends MainIndicator<CandleEntity, MAStyle> {
   EMAIndicator({
     List<int> calcParams = const [5, 10, 30, 60],
     MAStyle indicatorStyle = const MAStyle(),
-  }): super(
-    name: 'exponentialMovingAverage',
-    shortName: 'EMA',
-    calcParams: calcParams,
-    indicatorStyle: indicatorStyle,
-  ) {
+  }) : super(
+         name: 'exponentialMovingAverage',
+         shortName: 'EMA',
+         calcParams: calcParams,
+         indicatorStyle: indicatorStyle,
+       ) {
     _linePaint = Paint()
       ..isAntiAlias = true
       ..filterQuality = FilterQuality.high
@@ -19,7 +19,11 @@ class EMAIndicator extends MainIndicator<CandleEntity, MAStyle> {
   }
 
   @override
-  (double, double) getMaxMinValue(KLineEntity entity, double minV, double maxV) {
+  (double, double) getMaxMinValue(
+    KLineEntity entity,
+    double minV,
+    double maxV,
+  ) {
     if (entity.emaValueList?.isEmpty ?? true) return (minV, maxV);
     double minValue = minV;
     double maxValue = maxV;
@@ -32,17 +36,19 @@ class EMAIndicator extends MainIndicator<CandleEntity, MAStyle> {
   }
 
   @override
-  TextSpan? drawFigure(CandleEntity entity, int precision, KChartColors chartColors) {
+  TextSpan? drawFigure(
+    CandleEntity entity,
+    int precision,
+    KChartColors chartColors,
+  ) {
     List<InlineSpan> result = [];
     if (entity.emaValueList?.isEmpty ?? true) return null;
     for (int i = 0; i < (entity.emaValueList!.length); i++) {
       if (entity.emaValueList?[i] != 0) {
         var item = TextSpan(
-          text: "EMA${calcParams[i]}:${formatNumber(entity.emaValueList![i], precision)}  ",
-          style: TextStyle(
-            fontSize: 10,
-            color: indicatorStyle.getMAColor(i),
-          ),
+          text:
+              "EMA${calcParams[i]}:${formatNumber(entity.emaValueList![i], precision)}  ",
+          style: TextStyle(fontSize: 10, color: indicatorStyle.getMAColor(i)),
         );
         result.add(item);
       }
@@ -50,14 +56,19 @@ class EMAIndicator extends MainIndicator<CandleEntity, MAStyle> {
     return TextSpan(children: result);
   }
 
-
   @override
-  void drawChart(CandleEntity lastPoint, CandleEntity curPoint, double lastX, double curX, GetYFunction getY, Canvas canvas, KChartColors chartColors) {
-    if (
-      curPoint.emaValueList == null ||
-      lastPoint.emaValueList == null ||
-      curPoint.emaValueList!.length != lastPoint.emaValueList!.length
-    ) {
+  void drawChart(
+    CandleEntity lastPoint,
+    CandleEntity curPoint,
+    double lastX,
+    double curX,
+    GetYFunction getY,
+    Canvas canvas,
+    KChartColors chartColors,
+  ) {
+    if (curPoint.emaValueList == null ||
+        lastPoint.emaValueList == null ||
+        curPoint.emaValueList!.length != lastPoint.emaValueList!.length) {
       return;
     }
     for (int i = 0; i < curPoint.emaValueList!.length; i++) {
@@ -86,7 +97,8 @@ class EMAIndicator extends MainIndicator<CandleEntity, MAStyle> {
         if (i == 0) {
           emaValues[j] = entity.close;
         } else {
-          emaValues[j] = (entity.close - emaValues[j]) * multiplier + emaValues[j];
+          emaValues[j] =
+              (entity.close - emaValues[j]) * multiplier + emaValues[j];
         }
         ema[j] = emaValues[j];
       }

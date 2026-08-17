@@ -35,6 +35,7 @@ class DepthChartColors {
 
     ///value border color after selection
     this.selectBorderColor = const Color(0xFF909196),
+
     ///background color when value selected
     this.selectFillColor = const Color(0xFFFFFFFF),
 

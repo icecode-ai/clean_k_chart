@@ -1,13 +1,22 @@
 import 'package:clean_k_chart/indicator/indicator_template.dart';
+
 import '../entity/index.dart';
 
 class DataUtil {
-  static calculateAll(List<KLineEntity> dataList, List<MainIndicator> mainLi, List<SecondaryIndicator> secondaryLi) {
+  static calculateAll(
+    List<KLineEntity> dataList,
+    List<MainIndicator> mainLi,
+    List<SecondaryIndicator> secondaryLi,
+  ) {
     calcVolumeMA(dataList);
     calculateIndicators(dataList, mainLi, secondaryLi);
   }
 
-  static calculateIndicators(List<KLineEntity> dataList, List<MainIndicator> mainLi, List<SecondaryIndicator> secondaryLi) {
+  static calculateIndicators(
+    List<KLineEntity> dataList,
+    List<MainIndicator> mainLi,
+    List<SecondaryIndicator> secondaryLi,
+  ) {
     /// calculate main state
     mainLi.forEach((e) {
       e.calc(dataList);
@@ -19,7 +28,10 @@ class DataUtil {
     });
   }
 
-  static calculateIndicator(List<KLineEntity> dataList, IndicatorTemplate indicator) {
+  static calculateIndicator(
+    List<KLineEntity> dataList,
+    IndicatorTemplate indicator,
+  ) {
     indicator.calc(dataList);
   }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 export '../styles/k_chart_style.dart';
 
 abstract class BaseChartRenderer<T> {
@@ -43,10 +44,23 @@ abstract class BaseChartRenderer<T> {
 
   void drawVerticalText(canvas, textStyle, int gridRows);
 
-  void drawChart(T lastPoint, T curPoint, double lastX, double curX, Size size,
-      Canvas canvas);
+  void drawChart(
+    T lastPoint,
+    T curPoint,
+    double lastX,
+    double curX,
+    Size size,
+    Canvas canvas,
+  );
 
-  void drawLine(double? lastPrice, double? curPrice, Canvas canvas, double lastX, double curX, Color color) {
+  void drawLine(
+    double? lastPrice,
+    double? curPrice,
+    Canvas canvas,
+    double lastX,
+    double curX,
+    Color color,
+  ) {
     if (lastPrice == null || curPrice == null) {
       return;
     }

@@ -6,12 +6,12 @@ class MAIndicator extends MainIndicator<CandleEntity, MAStyle> {
   MAIndicator({
     List<int> calcParams = const [5, 10, 20, 25, 60],
     MAStyle indicatorStyle = const MAStyle(),
-  }): super(
-    name: 'movingAverage',
-    shortName: 'MA',
-    calcParams: calcParams,
-    indicatorStyle: indicatorStyle,
-  ) {
+  }) : super(
+         name: 'movingAverage',
+         shortName: 'MA',
+         calcParams: calcParams,
+         indicatorStyle: indicatorStyle,
+       ) {
     _linePaint = Paint()
       ..isAntiAlias = true
       ..filterQuality = FilterQuality.high
@@ -19,30 +19,39 @@ class MAIndicator extends MainIndicator<CandleEntity, MAStyle> {
   }
 
   @override
-  (double, double) getMaxMinValue(KLineEntity entity, double minV, double maxV) {
+  (double, double) getMaxMinValue(
+    KLineEntity entity,
+    double minV,
+    double maxV,
+  ) {
     if (entity.maValueList?.isEmpty ?? true) return (minV, maxV);
     double minValue = minV;
     double maxValue = maxV;
     for (double value in entity.maValueList!) {
       if (value == 0) continue;
-      minValue = min(value, minValue); // min(result, i == 0 ? double.maxFinite : i);
+      minValue = min(
+        value,
+        minValue,
+      ); // min(result, i == 0 ? double.maxFinite : i);
       maxValue = max(value, maxValue);
     }
     return (minValue, maxValue);
   }
 
   @override
-  TextSpan? drawFigure(CandleEntity entity, int precision, KChartColors chartColors) {
+  TextSpan? drawFigure(
+    CandleEntity entity,
+    int precision,
+    KChartColors chartColors,
+  ) {
     List<InlineSpan> result = [];
     if (entity.maValueList?.isEmpty ?? true) return null;
     for (int i = 0; i < (entity.maValueList!.length); i++) {
       if (entity.maValueList?[i] != 0) {
         var item = TextSpan(
-          text: "MA${calcParams[i]}:${formatNumber(entity.maValueList![i], precision)}  ",
-          style: TextStyle(
-            fontSize: 10,
-            color: indicatorStyle.getMAColor(i),
-          ),
+          text:
+              "MA${calcParams[i]}:${formatNumber(entity.maValueList![i], precision)}  ",
+          style: TextStyle(fontSize: 10, color: indicatorStyle.getMAColor(i)),
         );
         result.add(item);
       }
@@ -50,9 +59,16 @@ class MAIndicator extends MainIndicator<CandleEntity, MAStyle> {
     return TextSpan(children: result);
   }
 
-
   @override
-  void drawChart(CandleEntity lastPoint, CandleEntity curPoint, double lastX, double curX, GetYFunction getY, Canvas canvas, KChartColors chartColors) {
+  void drawChart(
+    CandleEntity lastPoint,
+    CandleEntity curPoint,
+    double lastX,
+    double curX,
+    GetYFunction getY,
+    Canvas canvas,
+    KChartColors chartColors,
+  ) {
     if (curPoint.maValueList == null ||
         lastPoint.maValueList == null ||
         curPoint.maValueList!.length != lastPoint.maValueList!.length) {

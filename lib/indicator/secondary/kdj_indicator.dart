@@ -3,12 +3,13 @@ part of '../indicator_template.dart';
 class KDJIndicator extends SecondaryIndicator<MACDEntity, KDJStyle> {
   late final Paint _linePaint;
 
-  KDJIndicator({ KDJStyle indicatorStyle = const KDJStyle() }): super(
-    name: 'stoch',
-    shortName: 'KDJ',
-    calcParams: const [],//[9, 3, 3], [9, 1, 3],
-    indicatorStyle: indicatorStyle,
-  ) {
+  KDJIndicator({KDJStyle indicatorStyle = const KDJStyle()})
+    : super(
+        name: 'stoch',
+        shortName: 'KDJ',
+        calcParams: const [], //[9, 3, 3], [9, 1, 3],
+        indicatorStyle: indicatorStyle,
+      ) {
     _linePaint = Paint()
       ..isAntiAlias = true
       ..filterQuality = FilterQuality.high
@@ -33,7 +34,11 @@ class KDJIndicator extends SecondaryIndicator<MACDEntity, KDJStyle> {
   }
 
   @override
-  TextSpan? drawFigure(MACDEntity entity, int precision, KChartColors chartColors) {
+  TextSpan? drawFigure(
+    MACDEntity entity,
+    int precision,
+    KChartColors chartColors,
+  ) {
     return TextSpan(
       children: [
         TextSpan(
@@ -75,10 +80,7 @@ class KDJIndicator extends SecondaryIndicator<MACDEntity, KDJStyle> {
       final value = rangeValue[i];
       if (value < minValue || value > maxValue) continue;
       TextPainter tp = TextPainter(
-        text: TextSpan(
-          text: value.toString(),
-          style: style,
-        ),
+        text: TextSpan(text: value.toString(), style: style),
         textDirection: TextDirection.ltr,
       );
       tp.layout();
@@ -93,7 +95,15 @@ class KDJIndicator extends SecondaryIndicator<MACDEntity, KDJStyle> {
   }
 
   @override
-  void drawChart(MACDEntity lastPoint, MACDEntity curPoint, double lastX, double curX, GetYFunction getY, Canvas canvas, KChartColors chartColors) {
+  void drawChart(
+    MACDEntity lastPoint,
+    MACDEntity curPoint,
+    double lastX,
+    double curX,
+    GetYFunction getY,
+    Canvas canvas,
+    KChartColors chartColors,
+  ) {
     if (curPoint.k != null || lastPoint.k != null) {
       canvas.drawLine(
         Offset(curX, getY(curPoint.k!)),

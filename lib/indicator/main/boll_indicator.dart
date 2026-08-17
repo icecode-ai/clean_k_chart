@@ -11,23 +11,27 @@ class BOLLIndicator extends MainIndicator<CandleEntity, BOLLStyle> {
   late final Paint _linePaint;
   late final Paint _fillPaint;
 
-  BOLLIndicator({ BOLLStyle indicatorStyle = const BOLLStyle() }): super(
-    name: 'bollingerBands',
-    shortName: 'BOLL',
-    calcParams: const [20, 2],
-    indicatorStyle: indicatorStyle,
-  ) {
+  BOLLIndicator({BOLLStyle indicatorStyle = const BOLLStyle()})
+    : super(
+        name: 'bollingerBands',
+        shortName: 'BOLL',
+        calcParams: const [20, 2],
+        indicatorStyle: indicatorStyle,
+      ) {
     _linePaint = Paint()
       ..isAntiAlias = true
       ..filterQuality = FilterQuality.high
       ..strokeWidth = indicatorStyle.lineWidth;
 
-    _fillPaint = Paint()
-      ..color = indicatorStyle.fillColor;
+    _fillPaint = Paint()..color = indicatorStyle.fillColor;
   }
 
   @override
-  (double, double) getMaxMinValue(KLineEntity entity, double minV, double maxV) {
+  (double, double) getMaxMinValue(
+    KLineEntity entity,
+    double minV,
+    double maxV,
+  ) {
     if (entity.boll == null) return (minV, maxV);
     double minValue = minV;
     if (entity.boll!.dn != null) {
@@ -41,7 +45,11 @@ class BOLLIndicator extends MainIndicator<CandleEntity, BOLLStyle> {
   }
 
   @override
-  TextSpan? drawFigure(CandleEntity entity, int precision, KChartColors chartColors) {
+  TextSpan? drawFigure(
+    CandleEntity entity,
+    int precision,
+    KChartColors chartColors,
+  ) {
     if (entity.boll == null) return null;
     Boll value = entity.boll!;
     return TextSpan(
@@ -49,32 +57,32 @@ class BOLLIndicator extends MainIndicator<CandleEntity, BOLLStyle> {
         if (value.mid != null && value.mid != 0)
           TextSpan(
             text: "BOLL:${formatNumber(value.mid!, precision)}  ",
-            style: TextStyle(
-              fontSize: 10,
-              color: indicatorStyle.bollColor,
-            ),
+            style: TextStyle(fontSize: 10, color: indicatorStyle.bollColor),
           ),
         if (value.up != null && value.up != 0)
           TextSpan(
             text: "UB:${formatNumber(value.up!, precision)}  ",
-            style: TextStyle(
-              fontSize: 10,
-              color: indicatorStyle.ubColor,
-            ),
+            style: TextStyle(fontSize: 10, color: indicatorStyle.ubColor),
           ),
         if (value.dn != null && value.dn != 0)
           TextSpan(
             text: "LB:${formatNumber(value.dn!, precision)}",
-            style: TextStyle(
-              fontSize: 10,
-              color: indicatorStyle.lbColor,
-            ),
+            style: TextStyle(fontSize: 10, color: indicatorStyle.lbColor),
           ),
       ],
     );
   }
+
   @override
-  void drawChart(CandleEntity lastPoint, CandleEntity curPoint, double lastX, double curX, GetYFunction getY, Canvas canvas, KChartColors chartColors) {
+  void drawChart(
+    CandleEntity lastPoint,
+    CandleEntity curPoint,
+    double lastX,
+    double curX,
+    GetYFunction getY,
+    Canvas canvas,
+    KChartColors chartColors,
+  ) {
     if (lastPoint.boll == null || curPoint.boll == null) return;
     final List<Offset> _positionLi = [];
 

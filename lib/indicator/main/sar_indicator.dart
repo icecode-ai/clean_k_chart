@@ -3,12 +3,13 @@ part of '../indicator_template.dart';
 class SARIndicator extends MainIndicator<CandleEntity, SARStyle> {
   late final Paint _dotPaint;
 
-  SARIndicator({ SARStyle indicatorStyle = const SARStyle() }): super(
-    name: 'stopAndReverse',
-    shortName: 'SAR',
-    calcParams: const [2, 2, 20],
-    indicatorStyle: indicatorStyle,
-  ) {
+  SARIndicator({SARStyle indicatorStyle = const SARStyle()})
+    : super(
+        name: 'stopAndReverse',
+        shortName: 'SAR',
+        calcParams: const [2, 2, 20],
+        indicatorStyle: indicatorStyle,
+      ) {
     _dotPaint = Paint()
       ..isAntiAlias = true
       ..filterQuality = FilterQuality.high
@@ -17,29 +18,39 @@ class SARIndicator extends MainIndicator<CandleEntity, SARStyle> {
   }
 
   @override
-  (double, double) getMaxMinValue(KLineEntity entity, double minV, double maxV) {
+  (double, double) getMaxMinValue(
+    KLineEntity entity,
+    double minV,
+    double maxV,
+  ) {
     if (entity.sar == null) return (minV, maxV);
-    return (
-      min(entity.sar!, minV),
-      max(entity.sar!, maxV),
-    );
+    return (min(entity.sar!, minV), max(entity.sar!, maxV));
   }
 
   @override
-  TextSpan? drawFigure(CandleEntity entity, int precision, KChartColors chartColors) {
+  TextSpan? drawFigure(
+    CandleEntity entity,
+    int precision,
+    KChartColors chartColors,
+  ) {
     double? value = entity.sar;
     if (value == null) return null;
     return TextSpan(
       text: "SAR: ${formatNumber(value, precision)}",
-      style: TextStyle(
-        fontSize: 10,
-        color: indicatorStyle.sarColor,
-      ),
+      style: TextStyle(fontSize: 10, color: indicatorStyle.sarColor),
     );
   }
 
   @override
-  void drawChart(CandleEntity lastPoint, CandleEntity curPoint, double lastX, double curX, GetYFunction getY, Canvas canvas, KChartColors chartColors) {
+  void drawChart(
+    CandleEntity lastPoint,
+    CandleEntity curPoint,
+    double lastX,
+    double curX,
+    GetYFunction getY,
+    Canvas canvas,
+    KChartColors chartColors,
+  ) {
     final sar = curPoint.sar;
     if (sar == null) return;
     final halfHL = (curPoint.high + curPoint.low) / 2;

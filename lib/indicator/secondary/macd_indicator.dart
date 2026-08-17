@@ -12,12 +12,13 @@ class MACDIndicator extends SecondaryIndicator<MACDEntity, MACDStyle> {
   late final Paint _linePaint;
   late final Paint _rectPaint;
 
-  MACDIndicator({ MACDStyle indicatorStyle = const MACDStyle() }): super(
-    name: 'movingAverageConvergenceDivergence',
-    shortName: 'MACD',
-    calcParams: const [12, 26, 9],
-    indicatorStyle: indicatorStyle,
-  ) {
+  MACDIndicator({MACDStyle indicatorStyle = const MACDStyle()})
+    : super(
+        name: 'movingAverageConvergenceDivergence',
+        shortName: 'MACD',
+        calcParams: const [12, 26, 9],
+        indicatorStyle: indicatorStyle,
+      ) {
     _linePaint = Paint()
       ..isAntiAlias = true
       ..filterQuality = FilterQuality.high
@@ -30,7 +31,11 @@ class MACDIndicator extends SecondaryIndicator<MACDEntity, MACDStyle> {
   }
 
   @override
-  (double, double) getMaxMinValue(KLineEntity entity, double minV, double maxV) {
+  (double, double) getMaxMinValue(
+    KLineEntity entity,
+    double minV,
+    double maxV,
+  ) {
     if (entity.macd != null) {
       minV = min(minV, entity.macd!);
       maxV = max(maxV, entity.macd!);
@@ -47,7 +52,11 @@ class MACDIndicator extends SecondaryIndicator<MACDEntity, MACDStyle> {
   }
 
   @override
-  TextSpan? drawFigure(MACDEntity entity, int precision, KChartColors chartColors) {
+  TextSpan? drawFigure(
+    MACDEntity entity,
+    int precision,
+    KChartColors chartColors,
+  ) {
     return TextSpan(
       children: [
         TextSpan(
@@ -100,10 +109,7 @@ class MACDIndicator extends SecondaryIndicator<MACDEntity, MACDStyle> {
     );
     minTp.layout();
 
-    maxTp.paint(
-      canvas,
-      Offset(chartRect.width - maxTp.width, chartRect.top),
-    );
+    maxTp.paint(canvas, Offset(chartRect.width - maxTp.width, chartRect.top));
     minTp.paint(
       canvas,
       Offset(chartRect.width - minTp.width, chartRect.bottom - minTp.height),
@@ -111,7 +117,15 @@ class MACDIndicator extends SecondaryIndicator<MACDEntity, MACDStyle> {
   }
 
   @override
-  void drawChart(MACDEntity lastPoint, MACDEntity curPoint, double lastX, double curX, GetYFunction getY, Canvas canvas, KChartColors chartColors) {
+  void drawChart(
+    MACDEntity lastPoint,
+    MACDEntity curPoint,
+    double lastX,
+    double curX,
+    GetYFunction getY,
+    Canvas canvas,
+    KChartColors chartColors,
+  ) {
     final prevMacd = lastPoint.macd;
     final macd = curPoint.macd;
     if (curPoint.macd != null) {
@@ -119,18 +133,18 @@ class MACDIndicator extends SecondaryIndicator<MACDEntity, MACDStyle> {
       double r = mMACDWidth / 2;
       double zeroy = getY(0);
       double macdY = getY(macd!);
-      _rectPaint.style = (prevMacd == null || prevMacd <= macd) ? PaintingStyle.stroke : PaintingStyle.fill;
+      _rectPaint.style = (prevMacd == null || prevMacd <= macd)
+          ? PaintingStyle.stroke
+          : PaintingStyle.fill;
       if (macd > 0) {
         canvas.drawRect(
           Rect.fromLTRB(curX - r, macdY, curX + r, zeroy),
-          _rectPaint
-            ..color = indicatorStyle.upColor,
+          _rectPaint..color = indicatorStyle.upColor,
         );
       } else {
         canvas.drawRect(
           Rect.fromLTRB(curX - r, zeroy, curX + r, macdY),
-          _rectPaint
-            ..color = indicatorStyle.dnColor,
+          _rectPaint..color = indicatorStyle.dnColor,
         );
       }
     }

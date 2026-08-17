@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:clean_k_chart/indicator/indicator_template.dart';
+import 'package:flutter/material.dart';
+
 import '../entity/candle_entity.dart';
 import '../utils/number_util.dart';
 import 'base_chart_renderer.dart';
@@ -42,13 +43,13 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
     this.verticalTextAlignment,
     this.mBottomPadding,
   ) : super(
-    chartRect: mainRect,
-    maxValue: maxValue,
-    minValue: minValue,
-    topPadding: topPadding,
-    fixedLength: fixedLength,
-    gridColor: chartColors.gridColor,
-  ) {
+        chartRect: mainRect,
+        maxValue: maxValue,
+        minValue: minValue,
+        topPadding: topPadding,
+        fixedLength: fixedLength,
+        gridColor: chartColors.gridColor,
+      ) {
     mCandleWidth = this.chartStyle.candleWidth;
     mCandleLineWidth = this.chartStyle.candleLineWidth;
     mLinePaint = Paint()
@@ -74,7 +75,11 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
     if (isLine == true) return;
     double y = chartStyle.indicatorTopMargin;
     for (int i = 0; i < indicatorLi.length; ++i) {
-      TextSpan? span = indicatorLi[i].drawFigure(data, fixedLength, chartColors);
+      TextSpan? span = indicatorLi[i].drawFigure(
+        data,
+        fixedLength,
+        chartColors,
+      );
       if (span == null) return;
       TextPainter tp = TextPainter(
         text: span,
@@ -101,7 +106,14 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
   }
 
   @override
-  void drawChart(CandleEntity lastPoint, CandleEntity curPoint, double lastX, double curX, Size size, Canvas canvas) {
+  void drawChart(
+    CandleEntity lastPoint,
+    CandleEntity curPoint,
+    double lastX,
+    double curX,
+    Size size,
+    Canvas canvas,
+  ) {
     if (isLine) {
       drawPolyline(lastPoint.close, curPoint.close, canvas, lastX, curX);
     } else {
@@ -109,7 +121,15 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
 
       /// draw chart main state
       for (int i = 0; i < indicatorLi.length; ++i) {
-        indicatorLi[i].drawChart(lastPoint, curPoint, lastX, curX, getY, canvas, chartColors);
+        indicatorLi[i].drawChart(
+          lastPoint,
+          curPoint,
+          lastX,
+          curX,
+          getY,
+          canvas,
+          chartColors,
+        );
       }
     }
   }
@@ -121,17 +141,23 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
     ..isAntiAlias = true;
 
   //画折线图
-  drawPolyline(double lastPrice, double curPrice, Canvas canvas, double lastX, double curX) {
-//    drawLine(lastPrice + 100, curPrice + 100, canvas, lastX, curX, ChartColors.kLineColor);
+  drawPolyline(
+    double lastPrice,
+    double curPrice,
+    Canvas canvas,
+    double lastX,
+    double curX,
+  ) {
+    //    drawLine(lastPrice + 100, curPrice + 100, canvas, lastX, curX, ChartColors.kLineColor);
     mLinePath ??= Path();
 
-//    if (lastX == curX) {
-//      mLinePath.moveTo(lastX, getY(lastPrice));
-//    } else {
-////      mLinePath.lineTo(curX, getY(curPrice));
-//      mLinePath.cubicTo(
-//          (lastX + curX) / 2, getY(lastPrice), (lastX + curX) / 2, getY(curPrice), curX, getY(curPrice));
-//    }
+    //    if (lastX == curX) {
+    //      mLinePath.moveTo(lastX, getY(lastPrice));
+    //    } else {
+    ////      mLinePath.lineTo(curX, getY(curPrice));
+    //      mLinePath.cubicTo(
+    //          (lastX + curX) / 2, getY(lastPrice), (lastX + curX) / 2, getY(curPrice), curX, getY(curPrice));
+    //    }
     if (lastX == curX) lastX = 0; //起点位置填充
     mLinePath!.moveTo(lastX, getY(lastPrice));
     mLinePath!.cubicTo(
@@ -144,19 +170,20 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
     );
 
     //画阴影
-    mLineFillShader ??= LinearGradient(
-      begin: Alignment.topCenter,
-      end: Alignment.bottomCenter,
-      tileMode: TileMode.clamp,
-      colors: this.chartColors.kLineFillColors,
-    ).createShader(
-      Rect.fromLTRB(
-        chartRect.left,
-        chartRect.top,
-        chartRect.right,
-        chartRect.bottom,
-      ),
-    );
+    mLineFillShader ??=
+        LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          tileMode: TileMode.clamp,
+          colors: this.chartColors.kLineFillColors,
+        ).createShader(
+          Rect.fromLTRB(
+            chartRect.left,
+            chartRect.top,
+            chartRect.right,
+            chartRect.bottom,
+          ),
+        );
     mLineFillPaint..shader = mLineFillShader;
 
     mLineFillPath ??= Path();
@@ -231,7 +258,10 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
         text: "${NumberUtil.formatFixed(value, fixedLength) ?? ''}",
         style: textStyle,
       );
-      TextPainter tp = TextPainter(text: span, textDirection: TextDirection.ltr);
+      TextPainter tp = TextPainter(
+        text: span,
+        textDirection: TextDirection.ltr,
+      );
       tp.layout();
 
       double offsetX;
@@ -257,7 +287,7 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
 
   @override
   void drawGrid(Canvas canvas, int gridRows, int gridColumns) {
-//    final int gridRows = 4, gridColumns = 4;
+    //    final int gridRows = 4, gridColumns = 4;
     double rowSpace = chartRect.height / gridRows;
     for (int i = 0; i <= gridRows; i++) {
       canvas.drawLine(
@@ -276,11 +306,8 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
     }
 
     /// draw top grid
-    canvas.drawLine(
-      Offset(0, 0),
-      Offset(chartRect.width, 0),
-      gridPaint..color,
-    );
+    canvas.drawLine(Offset(0, 0), Offset(chartRect.width, 0), gridPaint..color);
+
     /// draw bottom grid
     canvas.drawLine(
       Offset(0, chartRect.bottom + mBottomPadding),

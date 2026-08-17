@@ -3,12 +3,13 @@ part of '../indicator_template.dart';
 class WRIndicator extends SecondaryIndicator<MACDEntity, WRStyle> {
   late final Paint _linePaint;
 
-  WRIndicator({ WRStyle indicatorStyle = const WRStyle() }): super(
-    name: 'volumeRatio',
-    shortName: 'WR',
-    calcParams: const [26, 6],
-    indicatorStyle: indicatorStyle,
-  ) {
+  WRIndicator({WRStyle indicatorStyle = const WRStyle()})
+    : super(
+        name: 'volumeRatio',
+        shortName: 'WR',
+        calcParams: const [26, 6],
+        indicatorStyle: indicatorStyle,
+      ) {
     _linePaint = Paint()
       ..isAntiAlias = true
       ..filterQuality = FilterQuality.high
@@ -16,12 +17,20 @@ class WRIndicator extends SecondaryIndicator<MACDEntity, WRStyle> {
   }
 
   @override
-  (double, double) getMaxMinValue(KLineEntity entity, double minV, double maxV) {
+  (double, double) getMaxMinValue(
+    KLineEntity entity,
+    double minV,
+    double maxV,
+  ) {
     return (-100, 0);
   }
 
   @override
-  TextSpan? drawFigure(MACDEntity entity, int precision, KChartColors chartColors) {
+  TextSpan? drawFigure(
+    MACDEntity entity,
+    int precision,
+    KChartColors chartColors,
+  ) {
     if (entity.r == null) return null;
     return TextSpan(
       text: "WR(14):${formatNumber(entity.r!, precision)}",
@@ -55,10 +64,7 @@ class WRIndicator extends SecondaryIndicator<MACDEntity, WRStyle> {
     );
     minTp.layout();
 
-    maxTp.paint(
-      canvas,
-      Offset(chartRect.width - maxTp.width, chartRect.top),
-    );
+    maxTp.paint(canvas, Offset(chartRect.width - maxTp.width, chartRect.top));
     minTp.paint(
       canvas,
       Offset(chartRect.width - minTp.width, chartRect.bottom - minTp.height),
@@ -66,7 +72,15 @@ class WRIndicator extends SecondaryIndicator<MACDEntity, WRStyle> {
   }
 
   @override
-  void drawChart(MACDEntity lastPoint, MACDEntity curPoint, double lastX, double curX, GetYFunction getY, Canvas canvas, KChartColors chartColors) {
+  void drawChart(
+    MACDEntity lastPoint,
+    MACDEntity curPoint,
+    double lastX,
+    double curX,
+    GetYFunction getY,
+    Canvas canvas,
+    KChartColors chartColors,
+  ) {
     if (curPoint.r == null || lastPoint.r == null) return;
     canvas.drawLine(
       Offset(curX, getY(curPoint.r!)),

@@ -323,7 +323,7 @@ const List<String> monthShort = const <String>[
   'Sep',
   'Oct',
   'Nov',
-  'Dec'
+  'Dec',
 ];
 
 const List<String> monthLong = const <String>[
@@ -338,7 +338,7 @@ const List<String> monthLong = const <String>[
   'September',
   'October',
   'November',
-  'December'
+  'December',
 ];
 
 const List<String> dayShort = const [
@@ -348,7 +348,7 @@ const List<String> dayShort = const [
   'Thur',
   'Fri',
   'Sat',
-  'Sun'
+  'Sun',
 ];
 
 const List<String> dayLong = const [
@@ -358,7 +358,7 @@ const List<String> dayLong = const [
   'Thursday',
   'Friday',
   'Saturday',
-  'Sunday'
+  'Sunday',
 ];
 
 int dayInYear(DateTime date) =>

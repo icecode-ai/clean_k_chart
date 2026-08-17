@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:clean_k_chart/indicator/indicator_template.dart';
+import 'package:flutter/material.dart';
+
 import '../entity/macd_entity.dart';
 import 'base_chart_renderer.dart';
 
@@ -18,17 +19,32 @@ class SecondaryRenderer extends BaseChartRenderer<MACDEntity> {
     this.chartStyle,
     this.chartColors,
   ) : super(
-    chartRect: mainRect,
-    maxValue: maxValue,
-    minValue: minValue,
-    topPadding: topPadding,
-    fixedLength: fixedLength,
-    gridColor: chartColors.gridColor,
-  );
+        chartRect: mainRect,
+        maxValue: maxValue,
+        minValue: minValue,
+        topPadding: topPadding,
+        fixedLength: fixedLength,
+        gridColor: chartColors.gridColor,
+      );
 
   @override
-  void drawChart(MACDEntity lastPoint, MACDEntity curPoint, double lastX, double curX, Size size, Canvas canvas) {
-    indicator.drawChart(lastPoint, curPoint, lastX, curX, getY, canvas, chartColors);
+  void drawChart(
+    MACDEntity lastPoint,
+    MACDEntity curPoint,
+    double lastX,
+    double curX,
+    Size size,
+    Canvas canvas,
+  ) {
+    indicator.drawChart(
+      lastPoint,
+      curPoint,
+      lastX,
+      curX,
+      getY,
+      canvas,
+      chartColors,
+    );
   }
 
   @override
@@ -37,7 +53,10 @@ class SecondaryRenderer extends BaseChartRenderer<MACDEntity> {
     if (span == null) return;
     TextPainter tp = TextPainter(text: span, textDirection: TextDirection.ltr);
     tp.layout();
-    tp.paint(canvas, Offset(x, chartRect.top - topPadding + chartStyle.indicatorTopMargin));
+    tp.paint(
+      canvas,
+      Offset(x, chartRect.top - topPadding + chartStyle.indicatorTopMargin),
+    );
   }
 
   @override
