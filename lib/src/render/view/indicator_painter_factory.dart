@@ -8,16 +8,16 @@ import 'package:clean_k_chart/src/indicator/secondary/kdj_indicator.dart';
 import 'package:clean_k_chart/src/indicator/secondary/macd_indicator.dart';
 import 'package:clean_k_chart/src/indicator/secondary/rsi_indicator.dart';
 import 'package:clean_k_chart/src/indicator/secondary/wr_indicator.dart';
-import 'package:clean_k_chart/src/render/indicator_view/indicator_painter.dart';
-import 'package:clean_k_chart/src/render/indicator_view/main/boll_painter.dart';
-import 'package:clean_k_chart/src/render/indicator_view/main/ema_painter.dart';
-import 'package:clean_k_chart/src/render/indicator_view/main/ma_painter.dart';
-import 'package:clean_k_chart/src/render/indicator_view/main/sar_painter.dart';
-import 'package:clean_k_chart/src/render/indicator_view/secondary/cci_painter.dart';
-import 'package:clean_k_chart/src/render/indicator_view/secondary/kdj_painter.dart';
-import 'package:clean_k_chart/src/render/indicator_view/secondary/macd_painter.dart';
-import 'package:clean_k_chart/src/render/indicator_view/secondary/rsi_painter.dart';
-import 'package:clean_k_chart/src/render/indicator_view/secondary/wr_painter.dart';
+import 'package:clean_k_chart/src/render/view/indicator_painter.dart';
+import 'package:clean_k_chart/src/render/view/main/boll_painter.dart';
+import 'package:clean_k_chart/src/render/view/main/ema_painter.dart';
+import 'package:clean_k_chart/src/render/view/main/ma_painter.dart';
+import 'package:clean_k_chart/src/render/view/main/sar_painter.dart';
+import 'package:clean_k_chart/src/render/view/secondary/cci_painter.dart';
+import 'package:clean_k_chart/src/render/view/secondary/kdj_painter.dart';
+import 'package:clean_k_chart/src/render/view/secondary/macd_painter.dart';
+import 'package:clean_k_chart/src/render/view/secondary/rsi_painter.dart';
+import 'package:clean_k_chart/src/render/view/secondary/wr_painter.dart';
 import 'package:clean_k_chart/src/style/indicator_style.dart';
 
 typedef IndicatorPainterBuilder = IndicatorPainter Function(

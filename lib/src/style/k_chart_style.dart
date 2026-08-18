@@ -124,8 +124,9 @@ class KChartStyle {
   final int gridRows;
   final int gridColumns;
 
-  /// Custom date axis pattern (intl [DateFormat] pattern, e.g. `'yy-MM-dd'`).
-  /// When null the pattern is picked from the data cadence.
+  /// Custom date axis pattern (tokens `yyyy`/`yy`, `MM`/`M`, `dd`/`d`,
+  /// `HH`/`H`, `mm`/`m`, `ss`/`s`; other characters are literals), e.g.
+  /// `'yy-MM-dd'`. When null the pattern is picked from the data cadence.
   final String? datePattern;
 
   const KChartStyle({

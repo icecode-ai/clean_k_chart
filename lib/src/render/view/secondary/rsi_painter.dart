@@ -1,18 +1,18 @@
 import 'package:clean_k_chart/src/model/entity/k_line_entity.dart';
-import 'package:clean_k_chart/src/render/indicator_view/indicator_painter.dart';
+import 'package:clean_k_chart/src/render/view/indicator_painter.dart';
 import 'package:clean_k_chart/src/style/indicator_style.dart';
 import 'package:clean_k_chart/src/style/k_chart_style.dart' show KChartColors;
 import 'package:flutter/painting.dart';
 
-/// Painter for [WRIndicator].
-class WRPainter extends SecondaryIndicatorPainter {
-  final WRStyle style;
+/// Painter for [RSIIndicator].
+class RSIPainter extends SecondaryIndicatorPainter {
+  final RSIStyle style;
 
   final Paint _linePaint = Paint()
     ..isAntiAlias = true
     ..filterQuality = FilterQuality.high;
 
-  WRPainter(super.indicator, {WRStyle style = const WRStyle()})
+  RSIPainter(super.indicator, {RSIStyle style = const RSIStyle()})
     : style = style {
     _linePaint.strokeWidth = style.lineWidth;
   }
@@ -23,11 +23,11 @@ class WRPainter extends SecondaryIndicatorPainter {
     int precision,
     KChartColors chartColors,
   ) {
-    final wr = entity.wr;
-    if (wr == null) return null;
+    final rsi = entity.rsi;
+    if (rsi == null) return null;
     return TextSpan(
-      text: 'WR($primaryParam):${formatNumber(wr, precision)}',
-      style: labelStyle(style.wrColor),
+      text: 'RSI($primaryParam):${formatNumber(rsi, precision)}',
+      style: labelStyle(style.rsiColor),
     );
   }
 
@@ -42,14 +42,14 @@ class WRPainter extends SecondaryIndicatorPainter {
     KChartColors chartColors,
   ) {
     drawSingleLine(
-      lastPoint.wr,
-      curPoint.wr,
+      lastPoint.rsi,
+      curPoint.rsi,
       lastX,
       curX,
       getY,
       canvas,
       _linePaint,
-      style.wrColor,
+      style.rsiColor,
     );
   }
 }

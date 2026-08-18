@@ -3,7 +3,7 @@ import 'package:clean_k_chart/src/model/entity/k_line_entity.dart';
 /// Pure calculation contract for chart indicators.
 ///
 /// Implementations must not depend on Flutter rendering — painting logic
-/// lives in the matching [IndicatorPainter] under render/indicator_view/.
+/// lives in the matching [IndicatorPainter] under render/view/.
 abstract class Indicator {
   final String name;
 

@@ -1,8 +1,3 @@
-/// Clean K-line chart library.
-///
-/// Curated public API — internal renderers, painters and utils are not
-/// exported. Layering: widget → render → indicator → model, with style /
-/// i18n as leaf layers.
 library;
 
 // Widgets — user entry points

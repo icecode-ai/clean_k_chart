@@ -611,8 +611,10 @@ class ChartPainter extends CustomPainter {
   String _formatDate(int? milliseconds) {
     if (milliseconds == null || milliseconds <= 0) return '';
     _datePattern ??= chartStyle.datePattern ?? _deriveDatePattern();
-    return dateFormat(_datePattern!)
-        .format(DateTime.fromMillisecondsSinceEpoch(milliseconds));
+    return formatDate(
+      DateTime.fromMillisecondsSinceEpoch(milliseconds),
+      _datePattern!,
+    );
   }
 
   String _deriveDatePattern() {

@@ -1,6 +1,6 @@
 import 'package:clean_k_chart/src/indicator/indicator.dart';
 import 'package:clean_k_chart/src/model/entity/k_line_entity.dart';
-import 'package:clean_k_chart/src/render/indicator_view/indicator_painter.dart';
+import 'package:clean_k_chart/src/render/view/indicator_painter.dart';
 import 'package:clean_k_chart/src/render/renderer/base_chart_renderer.dart';
 import 'package:flutter/painting.dart';
 

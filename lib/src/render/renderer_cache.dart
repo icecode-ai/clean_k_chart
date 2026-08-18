@@ -1,5 +1,5 @@
 import 'package:clean_k_chart/src/indicator/indicator.dart';
-import 'package:clean_k_chart/src/render/indicator_view/indicator_painter_factory.dart';
+import 'package:clean_k_chart/src/render/view/indicator_painter_factory.dart';
 import 'package:clean_k_chart/src/render/painter/trend_line_renderer.dart';
 import 'package:clean_k_chart/src/render/renderer/main_renderer.dart';
 import 'package:clean_k_chart/src/render/renderer/secondary_renderer.dart';
