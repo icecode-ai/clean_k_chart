@@ -1,10 +1,10 @@
 import 'package:clean_k_chart/src/indicator/indicator.dart';
-import 'package:clean_k_chart/src/render/view/indicator_painter_factory.dart';
 import 'package:clean_k_chart/src/render/painter/trend_line_renderer.dart';
 import 'package:clean_k_chart/src/render/renderer/main_renderer.dart';
 import 'package:clean_k_chart/src/render/renderer/secondary_renderer.dart';
 import 'package:clean_k_chart/src/render/renderer/vol_renderer.dart';
 import 'package:clean_k_chart/src/render/text_painter_cache.dart';
+import 'package:clean_k_chart/src/render/view/indicator_painter_factory.dart';
 import 'package:clean_k_chart/src/style/indicator_style.dart';
 import 'package:clean_k_chart/src/style/k_chart_style.dart';
 import 'package:flutter/painting.dart';

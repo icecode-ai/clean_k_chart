@@ -17,7 +17,7 @@ typedef KLineDetailBuilder = Widget Function(KLineEntity entity);
 /// Indicator values are NOT calculated by this widget — run them through
 /// [IndicatorCalculator.calculateAll] (or [Indicator.calc]) before passing
 /// the data list.
-class KChartWidget extends StatefulWidget {
+class KChart extends StatefulWidget {
   final List<KLineEntity>? data;
   final List<MainIndicator> mainIndicators;
   final List<SecondaryIndicator> secondaryIndicators;
@@ -64,7 +64,7 @@ class KChartWidget extends StatefulWidget {
   final double flingRatio;
   final Curve flingCurve;
 
-  const KChartWidget({
+  const KChart({
     super.key,
     this.data,
     required this.detailBuilder,
@@ -93,13 +93,12 @@ class KChartWidget extends StatefulWidget {
   });
 
   @override
-  State<KChartWidget> createState() => _KChartWidgetState();
+  State<StatefulWidget> createState() => _KChartState();
 }
 
 enum _GestureMode { idle, drag, scale, longPress }
 
-class _KChartWidgetState extends State<KChartWidget>
-    with SingleTickerProviderStateMixin {
+class _KChartState extends State<KChart> with SingleTickerProviderStateMixin {
   final ChartRendererCache _rendererCache = ChartRendererCache();
   ChartViewport? _viewport;
 
@@ -136,7 +135,7 @@ class _KChartWidgetState extends State<KChartWidget>
   }
 
   @override
-  void didUpdateWidget(KChartWidget oldWidget) {
+  void didUpdateWidget(KChart oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.data != oldWidget.data) {
       final data = widget.data;
