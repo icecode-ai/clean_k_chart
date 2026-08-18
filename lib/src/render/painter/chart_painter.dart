@@ -506,6 +506,7 @@ class ChartPainter extends CustomPainter {
     List<KLineEntity> chartData,
   ) {
     final columns = chartStyle.gridColumns;
+    if (columns <= 0) return; // degenerate custom config — skip the axis
     final columnSpace = size.width / columns;
     final startX = viewport.getX(viewport.startIndex) - viewport.pointWidth / 2;
     final stopX = viewport.getX(viewport.stopIndex) + viewport.pointWidth / 2;
