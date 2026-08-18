@@ -3,7 +3,7 @@ import 'package:clean_k_chart/src/model/entity/depth_entity.dart';
 import 'package:clean_k_chart/src/render/depth_renderer_cache.dart';
 import 'package:clean_k_chart/src/render/painter/depth_chart_painter.dart';
 import 'package:clean_k_chart/src/style/depth_chart_style.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 
 /// Depth (bid/ask cumulative volume) chart with a long-press selection
 /// popup.

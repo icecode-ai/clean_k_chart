@@ -7,7 +7,8 @@ import 'package:clean_k_chart/src/render/painter/chart_painter.dart';
 import 'package:clean_k_chart/src/render/renderer_cache.dart';
 import 'package:clean_k_chart/src/style/indicator_style.dart';
 import 'package:clean_k_chart/src/style/k_chart_style.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
+
 
 /// Builds the detail dialog content for the selected K-line.
 typedef KLineDetailBuilder = Widget Function(KLineEntity entity);

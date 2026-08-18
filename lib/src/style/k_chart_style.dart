@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart' show Color;
+import 'package:flutter/painting.dart' show Color;
 
 /// Where the vertical axis price labels are drawn.
 enum VerticalTextAlignment { left, right }
