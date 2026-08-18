@@ -65,14 +65,14 @@ class TrendLineRenderer {
     _linePaint.color = lineColor;
     for (final line in lines) {
       final start = Offset(
-        viewport.dataXToX(line.start.dx),
-        mainRenderer.getY(line.start.dy),
+        viewport.dataXToX(line.start.dataX),
+        mainRenderer.getY(line.start.price),
       );
       final end = line.end == null
           ? Offset(cursorX, selectY)
           : Offset(
-              viewport.dataXToX(line.end!.dx),
-              mainRenderer.getY(line.end!.dy),
+              viewport.dataXToX(line.end!.dataX),
+              mainRenderer.getY(line.end!.price),
             );
       canvas.drawLine(start, end, _linePaint);
     }

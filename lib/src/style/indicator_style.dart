@@ -8,12 +8,12 @@ class IndicatorStyle {
 }
 
 /// Style for the MA / EMA multi-line indicators.
-class MAStyle extends IndicatorStyle {
+class MovingAverageStyle extends IndicatorStyle {
   /// Line colors, one per calc param; cycled by index.
-  final List<Color> maColors;
+  final List<Color> lineColors;
 
-  const MAStyle({
-    this.maColors = const [
+  const MovingAverageStyle({
+    this.lineColors = const [
       Color(0xFFFF0000),
       Color(0xFFFFC634),
       Color(0xFFB48EE3),
@@ -21,15 +21,16 @@ class MAStyle extends IndicatorStyle {
       Color(0xFF000000),
       Color(0xFF40D4F0),
     ],
+    super.lineWidth,
   });
 
-  /// The line color for param index [index]; cycles through [maColors].
+  /// The line color for param index [index]; cycles through [lineColors].
   ///
   /// An empty custom color list falls back to a neutral color instead of
   /// throwing a modulo-by-zero inside paint.
-  Color colorFor(int index) => maColors.isEmpty
+  Color colorFor(int index) => lineColors.isEmpty
       ? const Color(0xFFFFC634)
-      : maColors[index % maColors.length];
+      : lineColors[index % lineColors.length];
 }
 
 /// Style for the BOLL indicator.
@@ -44,6 +45,7 @@ class BOLLStyle extends IndicatorStyle {
     this.ubColor = const Color(0xFFFFC634),
     this.lbColor = const Color(0xFFFFC634),
     this.fillColor = const Color(0x12FFC634),
+    super.lineWidth,
   });
 }
 
@@ -61,6 +63,7 @@ class SARStyle extends IndicatorStyle {
     this.sarColor = const Color(0xFFFFC634),
     this.radius = 2.0,
     this.strokeWidth = 0.8,
+    super.lineWidth,
   });
 }
 
@@ -68,21 +71,21 @@ class SARStyle extends IndicatorStyle {
 class CCIStyle extends IndicatorStyle {
   final Color cciColor;
 
-  const CCIStyle({this.cciColor = const Color(0xFFFFC634)});
+  const CCIStyle({this.cciColor = const Color(0xFFFFC634), super.lineWidth});
 }
 
 /// Style for the RSI indicator.
 class RSIStyle extends IndicatorStyle {
   final Color rsiColor;
 
-  const RSIStyle({this.rsiColor = const Color(0xFFFFC634)});
+  const RSIStyle({this.rsiColor = const Color(0xFFFFC634), super.lineWidth});
 }
 
 /// Style for the WR indicator.
 class WRStyle extends IndicatorStyle {
   final Color wrColor;
 
-  const WRStyle({this.wrColor = const Color(0xFFFFC634)});
+  const WRStyle({this.wrColor = const Color(0xFFFFC634), super.lineWidth});
 }
 
 /// Style for the KDJ indicator.
@@ -95,6 +98,7 @@ class KDJStyle extends IndicatorStyle {
     this.kColor = const Color(0xFFFFC634),
     this.dColor = const Color(0xFF35CDAC),
     this.jColor = const Color(0xFFB48EE3),
+    super.lineWidth,
   });
 }
 
@@ -118,6 +122,7 @@ class MACDStyle extends IndicatorStyle {
     this.difColor = const Color(0xFF35CDAC),
     this.deaColor = const Color(0xFFB48EE3),
     this.macdWidth = 8.5,
+    super.lineWidth,
   });
 }
 
@@ -126,8 +131,8 @@ class MACDStyle extends IndicatorStyle {
 /// Indicators are pure calculation objects; all painting configuration
 /// lives here on the rendering side.
 class IndicatorStyles {
-  final MAStyle ma;
-  final MAStyle ema;
+  final MovingAverageStyle ma;
+  final MovingAverageStyle ema;
   final BOLLStyle boll;
   final SARStyle sar;
   final MACDStyle macd;
@@ -137,8 +142,8 @@ class IndicatorStyles {
   final CCIStyle cci;
 
   const IndicatorStyles({
-    this.ma = const MAStyle(),
-    this.ema = const MAStyle(),
+    this.ma = const MovingAverageStyle(),
+    this.ema = const MovingAverageStyle(),
     this.boll = const BOLLStyle(),
     this.sar = const SARStyle(),
     this.macd = const MACDStyle(),

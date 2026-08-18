@@ -7,13 +7,16 @@ import 'package:flutter/painting.dart';
 /// Shared implementation for multi-line main indicators (MA / EMA):
 /// one line per calc param over a per-entity value list.
 abstract class MultiLineIndicatorPainter extends IndicatorPainter {
-  final MAStyle style;
+  final MovingAverageStyle style;
 
   final Paint _linePaint = Paint()
     ..isAntiAlias = true
     ..filterQuality = FilterQuality.high;
 
-  MultiLineIndicatorPainter(super.indicator, {this.style = const MAStyle()}) {
+  MultiLineIndicatorPainter(
+    super.indicator, {
+    this.style = const MovingAverageStyle(),
+  }) {
     _linePaint.strokeWidth = style.lineWidth;
   }
 

@@ -31,21 +31,18 @@ class BOLLPainter extends IndicatorPainter {
     if (boll == null) return null;
     return TextSpan(
       children: [
-        if (boll.mid != null && boll.mid != 0)
-          TextSpan(
-            text: 'BOLL:${formatNumber(boll.mid!, precision)}  ',
-            style: labelStyle(style.bollColor),
-          ),
-        if (boll.up != null && boll.up != 0)
-          TextSpan(
-            text: 'UB:${formatNumber(boll.up!, precision)}  ',
-            style: labelStyle(style.ubColor),
-          ),
-        if (boll.dn != null && boll.dn != 0)
-          TextSpan(
-            text: 'LB:${formatNumber(boll.dn!, precision)}',
-            style: labelStyle(style.lbColor),
-          ),
+        TextSpan(
+          text: 'BOLL:${formatNumber(boll.mid, precision)}  ',
+          style: labelStyle(style.bollColor),
+        ),
+        TextSpan(
+          text: 'UB:${formatNumber(boll.up, precision)}  ',
+          style: labelStyle(style.ubColor),
+        ),
+        TextSpan(
+          text: 'LB:${formatNumber(boll.dn, precision)}',
+          style: labelStyle(style.lbColor),
+        ),
       ],
     );
   }
@@ -64,43 +61,28 @@ class BOLLPainter extends IndicatorPainter {
     final curBoll = curPoint.boll;
     if (lastBoll == null || curBoll == null) return;
 
-    final curUp = curBoll.up;
-    final lastUp = lastBoll.up;
-    final curDn = curBoll.dn;
-    final lastDn = lastBoll.dn;
-
-    if (curUp != null && lastUp != null) {
-      canvas.drawLine(
-        Offset(curX, getY(curUp)),
-        Offset(lastX, getY(lastUp)),
-        _linePaint..color = style.ubColor,
-      );
-    }
-    if (curDn != null && lastDn != null) {
-      canvas.drawLine(
-        Offset(lastX, getY(lastDn)),
-        Offset(curX, getY(curDn)),
-        _linePaint..color = style.lbColor,
-      );
-    }
-    if (curUp != null && lastUp != null && curDn != null && lastDn != null) {
-      _fillPath
-        ..reset()
-        ..moveTo(curX, getY(curUp))
-        ..lineTo(lastX, getY(lastUp))
-        ..lineTo(lastX, getY(lastDn))
-        ..lineTo(curX, getY(curDn))
-        ..close();
-      canvas.drawPath(_fillPath, _fillPaint);
-    }
-    final curMid = curBoll.mid;
-    final lastMid = lastBoll.mid;
-    if (curMid != null && lastMid != null) {
-      canvas.drawLine(
-        Offset(curX, getY(curMid)),
-        Offset(lastX, getY(lastMid)),
-        _linePaint..color = style.bollColor,
-      );
-    }
+    canvas.drawLine(
+      Offset(curX, getY(curBoll.up)),
+      Offset(lastX, getY(lastBoll.up)),
+      _linePaint..color = style.ubColor,
+    );
+    canvas.drawLine(
+      Offset(lastX, getY(lastBoll.dn)),
+      Offset(curX, getY(curBoll.dn)),
+      _linePaint..color = style.lbColor,
+    );
+    _fillPath
+      ..reset()
+      ..moveTo(curX, getY(curBoll.up))
+      ..lineTo(lastX, getY(lastBoll.up))
+      ..lineTo(lastX, getY(lastBoll.dn))
+      ..lineTo(curX, getY(curBoll.dn))
+      ..close();
+    canvas.drawPath(_fillPath, _fillPaint);
+    canvas.drawLine(
+      Offset(curX, getY(curBoll.mid)),
+      Offset(lastX, getY(lastBoll.mid)),
+      _linePaint..color = style.bollColor,
+    );
   }
 }

@@ -8,8 +8,10 @@ import 'package:clean_k_chart/src/model/entity/k_line_entity.dart';
 ///
 /// Params: `[period]` (defaults to `[14]`).
 ///
-/// `RSI = SUM(MAX(close − prevClose, 0), N) / SUM(|close − prevClose|, N) × 100`
-/// using Wilder smoothing.
+/// `RSI = WilderEMA(MAX(close − prevClose, 0)) /
+/// WilderEMA(|close − prevClose|) × 100`, where
+/// `WilderEMA_t = (x_t + (period − 1) · WilderEMA_{t−1}) / period`.
+/// Values are null for the first `period − 1` bars (warm-up).
 class RSIIndicator extends SecondaryIndicator {
   RSIIndicator({super.calcParams = const [14]})
     : assert(calcParams.isNotEmpty),

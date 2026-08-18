@@ -130,24 +130,6 @@ abstract class BaseChartRenderer {
     return labelPainter.height;
   }
 
-  /// Draws a value line, skipping null warm-up values on either end.
-  void drawValueLine(
-    double? lastValue,
-    double? curValue,
-    Canvas canvas,
-    double lastX,
-    double curX,
-    Paint paint,
-    Color color,
-  ) {
-    if (lastValue == null || curValue == null) return;
-    canvas.drawLine(
-      Offset(lastX, getY(lastValue)),
-      Offset(curX, getY(curValue)),
-      paint..color = color,
-    );
-  }
-
   /// Formats a value for the vertical axis.
   String formatAxisValue(double value) =>
       NumberUtil.formatFixed(value, fixedLength) ?? '';

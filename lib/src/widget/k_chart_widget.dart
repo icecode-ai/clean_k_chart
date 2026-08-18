@@ -290,7 +290,7 @@ class _KChartWidgetState extends State<KChartWidget>
   }
 
   /// Captures the current selection as a (data x, price) anchor.
-  Offset? _captureTrendAnchor() {
+  TrendLineAnchor? _captureTrendAnchor() {
     final viewport = _viewport;
     final mainRenderer = _rendererCache.main;
     if (viewport == null || mainRenderer == null || viewport.itemCount == 0) {
@@ -298,7 +298,7 @@ class _KChartWidgetState extends State<KChartWidget>
     }
     final dataX = viewport.getX(viewport.selectedIndex(_selectX));
     final price = mainRenderer.valueFromY(_selectY);
-    return Offset(dataX, price);
+    return TrendLineAnchor(dataX, price);
   }
 
   void _onDragDown() {

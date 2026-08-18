@@ -30,8 +30,8 @@ class DepthChart extends StatefulWidget {
     this.chartColors = const DepthChartColors(),
     this.chartStyle = const DepthChartStyle(),
     this.translations = const ChartTranslations(),
-    this.baseUnit = 2,
-    this.quoteUnit = 6,
+    this.baseUnit = 6,
+    this.quoteUnit = 2,
     this.offset = const Offset(8, 0),
   });
 
@@ -42,34 +42,23 @@ class DepthChart extends StatefulWidget {
 class _DepthChartState extends State<DepthChart> {
   final DepthRendererCache _rendererCache = DepthRendererCache();
 
+  /// Long-press position; null while no press is active.
   Offset? _pressOffset;
-  bool _isLongPress = false;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onLongPressStart: (details) {
-        setState(() {
-          _pressOffset = details.localPosition;
-          _isLongPress = true;
-        });
+        setState(() => _pressOffset = details.localPosition);
       },
       onLongPressMoveUpdate: (details) {
-        setState(() {
-          _pressOffset = details.localPosition;
-        });
+        setState(() => _pressOffset = details.localPosition);
       },
       onLongPressEnd: (details) {
-        setState(() {
-          _pressOffset = null;
-          _isLongPress = false;
-        });
+        setState(() => _pressOffset = null);
       },
       onLongPressCancel: () {
-        setState(() {
-          _pressOffset = null;
-          _isLongPress = false;
-        });
+        setState(() => _pressOffset = null);
       },
       child: RepaintBoundary(
         child: CustomPaint(
@@ -78,7 +67,6 @@ class _DepthChartState extends State<DepthChart> {
             bids: widget.bids,
             asks: widget.asks,
             pressOffset: _pressOffset,
-            isLongPress: _isLongPress,
             baseUnit: widget.baseUnit,
             quoteUnit: widget.quoteUnit,
             chartColors: widget.chartColors,

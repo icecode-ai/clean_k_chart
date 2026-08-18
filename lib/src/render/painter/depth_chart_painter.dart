@@ -15,10 +15,12 @@ import 'package:flutter/rendering.dart' show CustomPainter;
 /// live in [DepthRendererCache] held by the widget and are re-targeted
 /// each frame.
 class DepthChartPainter extends CustomPainter {
-  final List<DepthEntity>? bids;
-  final List<DepthEntity>? asks;
+  final List<DepthEntity> bids;
+  final List<DepthEntity> asks;
+
+  /// Long-press position; null while no press is active.
   final Offset? pressOffset;
-  final bool isLongPress;
+
   final int baseUnit;
   final int quoteUnit;
   final DepthChartColors chartColors;
@@ -44,7 +46,6 @@ class DepthChartPainter extends CustomPainter {
     required this.bids,
     required this.asks,
     required this.pressOffset,
-    required this.isLongPress,
     required this.baseUnit,
     required this.quoteUnit,
     required this.chartColors,
@@ -55,19 +56,16 @@ class DepthChartPainter extends CustomPainter {
   }) : _maxVolume = _resolveMaxVolume(bids, asks);
 
   static double? _resolveMaxVolume(
-    List<DepthEntity>? bids,
-    List<DepthEntity>? asks,
+    List<DepthEntity> bids,
+    List<DepthEntity> asks,
   ) {
-    if (bids == null || asks == null || bids.isEmpty || asks.isEmpty) {
-      return null;
-    }
+    if (bids.isEmpty || asks.isEmpty) return null;
     return math.max(bids.first.vol, asks.last.vol) * 1.08;
   }
 
   double get _volumeStep => _maxVolume! / _lineCount;
 
-  bool get _hasData =>
-      bids != null && asks != null && bids!.isNotEmpty && asks!.isNotEmpty;
+  bool get _hasData => bids.isNotEmpty && asks.isNotEmpty;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -86,7 +84,7 @@ class DepthChartPainter extends CustomPainter {
   }
 
   void _drawBuy(Canvas canvas) {
-    final data = bids!;
+    final data = bids;
     _buyPointWidth = _drawWidth / (data.length - 1 == 0 ? 1 : data.length - 1);
     rendererCache.buyPath.reset();
     for (var i = 0; i < data.length; i++) {
@@ -127,7 +125,7 @@ class DepthChartPainter extends CustomPainter {
   }
 
   void _drawSell(Canvas canvas) {
-    final data = asks!;
+    final data = asks;
     _sellPointWidth = _drawWidth / (data.length - 1 == 0 ? 1 : data.length - 1);
     rendererCache.sellPath.reset();
     for (var i = 0; i < data.length; i++) {
@@ -188,11 +186,11 @@ class DepthChartPainter extends CustomPainter {
       );
     }
 
-    final centerPrice = (bids!.last.price + asks!.first.price) / 2;
+    final centerPrice = (bids.last.price + asks.first.price) / 2;
 
     _paintBottomText(
       canvas,
-      NumberUtil.formatFixed(bids!.first.price, quoteUnit) ?? '',
+      NumberUtil.formatFixed(bids.first.price, quoteUnit) ?? '',
       0,
       textStyle,
     );
@@ -205,17 +203,14 @@ class DepthChartPainter extends CustomPainter {
     );
     _paintBottomText(
       canvas,
-      NumberUtil.formatFixed(asks!.last.price, quoteUnit) ?? '',
+      NumberUtil.formatFixed(asks.last.price, quoteUnit) ?? '',
       _width,
       textStyle,
       alignEnd: true,
     );
     _paintBottomText(
       canvas,
-      NumberUtil.formatFixed(
-            (bids!.first.price + centerPrice) / 2,
-            quoteUnit,
-          ) ??
+      NumberUtil.formatFixed((bids.first.price + centerPrice) / 2, quoteUnit) ??
           '',
       _drawWidth / 2,
       textStyle,
@@ -223,29 +218,29 @@ class DepthChartPainter extends CustomPainter {
     );
     _paintBottomText(
       canvas,
-      NumberUtil.formatFixed((asks!.last.price + centerPrice) / 2, quoteUnit) ??
+      NumberUtil.formatFixed((asks.last.price + centerPrice) / 2, quoteUnit) ??
           '',
       (_drawWidth + _width) / 2,
       textStyle,
       center: true,
     );
 
-    if (isLongPress && pressOffset != null) {
-      final dx = pressOffset!.dx;
-      if (dx <= _drawWidth) {
-        final index = _indexOfX(dx, 0, bids!.length - 1, getBuyX);
-        _drawSelectView(canvas, isBuy: true, index: index);
-        final mirroredIndex = bids!.length - index - 1;
-        if (mirroredIndex < asks!.length) {
-          _drawSelectView(canvas, isBuy: false, index: mirroredIndex);
-        }
-      } else {
-        final index = _indexOfX(dx, 0, asks!.length - 1, getSellX);
-        _drawSelectView(canvas, isBuy: false, index: index);
-        final mirroredIndex = bids!.length - index - 1;
-        if (mirroredIndex >= 0 && mirroredIndex < bids!.length) {
-          _drawSelectView(canvas, isBuy: true, index: mirroredIndex);
-        }
+    final press = pressOffset;
+    if (press == null) return;
+    final dx = press.dx;
+    if (dx <= _drawWidth) {
+      final index = _indexAtX(dx, _buyPointWidth!, bids.length);
+      _drawSelectView(canvas, isBuy: true, index: index);
+      final mirroredIndex = bids.length - index - 1;
+      if (mirroredIndex < asks.length) {
+        _drawSelectView(canvas, isBuy: false, index: mirroredIndex);
+      }
+    } else {
+      final index = _indexAtX(dx - _drawWidth, _sellPointWidth!, asks.length);
+      _drawSelectView(canvas, isBuy: false, index: index);
+      final mirroredIndex = bids.length - index - 1;
+      if (mirroredIndex >= 0 && mirroredIndex < bids.length) {
+        _drawSelectView(canvas, isBuy: true, index: mirroredIndex);
       }
     }
   }
@@ -278,7 +273,7 @@ class DepthChartPainter extends CustomPainter {
     required bool isBuy,
     required int index,
   }) {
-    final data = isBuy ? bids! : asks!;
+    final data = isBuy ? bids : asks;
     final entity = data[index];
     final dx = isBuy ? getBuyX(index) : getSellX(index);
     final dy = getY(entity.vol);
@@ -342,30 +337,11 @@ class DepthChartPainter extends CustomPainter {
     rendererCache.paintPopup(canvas, rect.topLeft, chartStyle);
   }
 
-  int _indexOfX(
-    double targetX,
-    int start,
-    int end,
-    double Function(int position) getX,
-  ) {
-    if (end == start || end == -1) {
-      return start;
-    }
-    if (end - start == 1) {
-      final startValue = getX(start);
-      final endValue = getX(end);
-      return (targetX - startValue).abs() < (targetX - endValue).abs()
-          ? start
-          : end;
-    }
-    final mid = start + (end - start) ~/ 2;
-    final midValue = getX(mid);
-    if (targetX < midValue) {
-      return _indexOfX(targetX, start, mid, getX);
-    } else if (targetX > midValue) {
-      return _indexOfX(targetX, mid, end, getX);
-    }
-    return mid;
+  /// Index of the point at x [x] on a side whose points sit [pointWidth]
+  /// apart (uniform grid — direct rounding, no search).
+  int _indexAtX(double x, double pointWidth, int count) {
+    if (count == 0 || pointWidth <= 0) return 0;
+    return (x / pointWidth).round().clamp(0, count - 1);
   }
 
   double getBuyX(int position) => position * _buyPointWidth!;
@@ -383,7 +359,6 @@ class DepthChartPainter extends CustomPainter {
     return oldDelegate.bids != bids ||
         oldDelegate.asks != asks ||
         oldDelegate.pressOffset != pressOffset ||
-        oldDelegate.isLongPress != isLongPress ||
         oldDelegate.baseUnit != baseUnit ||
         oldDelegate.quoteUnit != quoteUnit ||
         oldDelegate.offset != offset ||

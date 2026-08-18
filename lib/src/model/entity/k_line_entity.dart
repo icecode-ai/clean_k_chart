@@ -29,9 +29,6 @@ class KLineEntity
         WREntity,
         CCIEntity {
   int? time;
-  double? amount;
-  double? change;
-  double? ratio;
 
   KLineEntity({
     this.time,
@@ -40,9 +37,6 @@ class KLineEntity
     double low = 0,
     double close = 0,
     double vol = 0,
-    this.amount,
-    this.change,
-    this.ratio,
   }) {
     this.open = open;
     this.high = high;
@@ -59,9 +53,6 @@ class KLineEntity
       low: _readDouble(json, 'low'),
       close: _readDouble(json, 'close'),
       vol: _readDouble(json, 'vol'),
-      amount: _readDoubleOrNull(json, 'amount'),
-      change: _readDoubleOrNull(json, 'change'),
-      ratio: _readDoubleOrNull(json, 'ratio'),
     );
   }
 
@@ -73,17 +64,13 @@ class KLineEntity
       'low': low,
       'close': close,
       'vol': vol,
-      'amount': amount,
-      'change': change,
-      'ratio': ratio,
     };
   }
 
   @override
   String toString() {
     return 'KLineEntity{open: $open, high: $high, low: $low, close: $close, '
-        'vol: $vol, time: $time, amount: $amount, ratio: $ratio, '
-        'change: $change}';
+        'vol: $vol, time: $time}';
   }
 
   static int _readInt(Map<String, dynamic> json, String key, [int def = 0]) {

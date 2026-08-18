@@ -1,4 +1,5 @@
 import 'package:clean_k_chart/src/model/entity/k_line_entity.dart';
+import 'package:clean_k_chart/src/render/render_util.dart';
 import 'package:clean_k_chart/src/render/renderer/base_chart_renderer.dart';
 import 'package:clean_k_chart/src/utils/number_util.dart';
 import 'package:flutter/painting.dart';
@@ -37,20 +38,22 @@ class VolRenderer extends BaseChartRenderer {
       );
     }
     drawValueLine(
+      canvas,
       lastPoint.ma5Volume,
       curPoint.ma5Volume,
-      canvas,
       lastX,
       curX,
+      getY,
       chartPaint,
       chartColors.ma5Color,
     );
     drawValueLine(
+      canvas,
       lastPoint.ma10Volume,
       curPoint.ma10Volume,
-      canvas,
       lastX,
       curX,
+      getY,
       chartPaint,
       chartColors.ma10Color,
     );
@@ -66,17 +69,17 @@ class VolRenderer extends BaseChartRenderer {
     final spans = <InlineSpan>[
       TextSpan(
         text: 'VOL:${NumberUtil.formatCompact(data.vol)}   ',
-        style: getTextStyle(chartColors.volColor),
+        style: axisLabelStyle(chartColors.volColor),
       ),
-      if (data.ma5Volume != null && data.ma5Volume != 0)
+      if (data.ma5Volume != null)
         TextSpan(
           text: 'MA5:${NumberUtil.formatCompact(data.ma5Volume!)}   ',
-          style: getTextStyle(chartColors.ma5Color),
+          style: axisLabelStyle(chartColors.ma5Color),
         ),
-      if (data.ma10Volume != null && data.ma10Volume != 0)
+      if (data.ma10Volume != null)
         TextSpan(
           text: 'MA10:${NumberUtil.formatCompact(data.ma10Volume!)}   ',
-          style: getTextStyle(chartColors.ma10Color),
+          style: axisLabelStyle(chartColors.ma10Color),
         ),
     ];
     drawHeaderText(canvas, TextSpan(children: spans), Offset(x, headerY));
@@ -93,7 +96,4 @@ class VolRenderer extends BaseChartRenderer {
       Offset(chartRect.width - labelPainter.width - chartStyle.space, headerY),
     );
   }
-
-  TextStyle getTextStyle(Color color) =>
-      TextStyle(fontSize: 10.0, color: color);
 }

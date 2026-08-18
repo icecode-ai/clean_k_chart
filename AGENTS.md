@@ -19,7 +19,7 @@ Layered, one-directional: `widget → render → indicator → model`; `style` /
 | `indicator/` | Pure indicator calculation (`Indicator`/`MainIndicator`/`SecondaryIndicator`, 9 built-ins, `IndicatorCalculator`, `indicator_util.dart` math helpers). **No Flutter imports at all** |
 | `style/` | Config classes: `KChartColors`/`KChartStyle` (+`VerticalTextAlignment`), `IndicatorStyles` bundle + per-indicator styles, `DepthChartColors`/`DepthChartStyle` |
 | `i18n/` | `ChartTranslations` |
-| `render/` | All drawing code: `chart_viewport.dart` (scale/scroll windowing, one instance per chart — no statics), `chart_dimension.dart` (layout math), `renderer_cache.dart` (long-lived renderers/painters/text caches), `painter/` (`ChartPainter` orchestrator, `DepthChartPainter`, `TrendLineRenderer`), `renderer/` (panel renderers), `indicator_view/` (indicator painters + `IndicatorPainterFactory`) |
+| `render/` | All drawing code: `chart_viewport.dart` (scale/scroll windowing, one instance per chart — no statics), `chart_dimension.dart` (layout math), `renderer_cache.dart` (long-lived renderers/painters/text caches), `depth_renderer_cache.dart` (depth-chart render state), `render_util.dart` (shared draw helpers), `painter/` (`ChartPainter` orchestrator, `DepthChartPainter`, `TrendLineRenderer`), `renderer/` (panel renderers), `indicator_view/` (indicator painters + `IndicatorPainterFactory`) |
 | `widget/` | User entry points: `KChartWidget`, `DepthChart` |
 | `utils/` | Internal helpers (`number_util.dart`, `date_format.dart` intl wrapper) |
 

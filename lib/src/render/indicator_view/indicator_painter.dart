@@ -1,5 +1,6 @@
 import 'package:clean_k_chart/src/indicator/indicator.dart';
 import 'package:clean_k_chart/src/model/entity/k_line_entity.dart';
+import 'package:clean_k_chart/src/render/render_util.dart';
 import 'package:clean_k_chart/src/style/k_chart_style.dart' show KChartColors;
 import 'package:clean_k_chart/src/utils/number_util.dart';
 import 'package:flutter/painting.dart';
@@ -35,7 +36,7 @@ abstract class IndicatorPainter {
     KChartColors chartColors,
   );
 
-  TextStyle labelStyle(Color color) => TextStyle(fontSize: 10, color: color);
+  TextStyle labelStyle(Color color) => axisLabelStyle(color);
 
   /// First calc param for single-param labels; `--` when the indicator
   /// was constructed with an empty param list (never throws in paint).
@@ -106,11 +107,6 @@ abstract class SecondaryIndicatorPainter extends IndicatorPainter {
     Paint paint,
     Color color,
   ) {
-    if (lastValue == null || curValue == null) return;
-    canvas.drawLine(
-      Offset(lastX, getY(lastValue)),
-      Offset(curX, getY(curValue)),
-      paint..color = color,
-    );
+    drawValueLine(canvas, lastValue, curValue, lastX, curX, getY, paint, color);
   }
 }

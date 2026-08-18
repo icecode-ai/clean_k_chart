@@ -9,7 +9,7 @@ import 'package:flutter/painting.dart';
 class MainRenderer extends BaseChartRenderer {
   final List<IndicatorPainter> indicatorPainters;
   final bool isLine;
-  VerticalTextAlignment verticalTextAlignment;
+  final VerticalTextAlignment verticalTextAlignment;
 
   static const double _contentPadding = 5.0;
   static const double _lineStrokeWidth = 1.0;

@@ -1,3 +1,69 @@
+## 0.2.0
+
+Quality pass over the 0.1.0 structure: correctness fixes, render-object
+economy and API cleanup. Breaking changes are rename/removals of dead or
+misleading API surface (the package is pre-1.0 with no consumers).
+
+### Breaking changes
+
+* **Style**
+  * `MAStyle` → `MovingAverageStyle` (it styles both MA and EMA); its
+    color list `maColors` → `lineColors`.
+  * `IndicatorStyle.lineWidth` is now forwarded by every subclass — it
+    was silently stuck at the 1.0 default.
+* **Entity layer**
+  * `KLineEntity`: dead `amount`/`change`/`ratio` slots removed (parsed
+    but never consumed; also dropped from the JSON round-trip).
+  * `TrendLine` anchors are `TrendLineAnchor(dataX, price)` — pure data
+    coordinates, no `dart:ui` `Offset` in the model layer.
+  * `BollValue.up/mid/dn` are non-nullable (the indicator always sets
+    all three); `emaValues` is `List<double>?` whose entries are never
+    null (seeded from the first close).
+* **Depth chart**
+  * `bids`/`asks` are non-null; `isLongPress` removed (derived from
+    `pressOffset`).
+  * `baseUnit`/`quoteUnit` defaults swapped to the conventional
+    volume-6 / price-2 digits (were inherited swapped).
+  * `DepthChartPainter` takes a long-lived `rendererCache`
+    (`DepthRendererCache`), the same pattern as `ChartPainter`.
+* BOLL standard deviation is population (÷n) per the canonical
+  definition (was ÷(n−1), inherited).
+
+### Fixed
+
+* `NumberUtil.format` produced malformed labels for integer-valued and
+  short fractions (`"1,234.1234"`); the fraction now always pads to the
+  requested precision.
+* Non-finite / degenerate value windows (all-zero volume, NaN data) are
+  sanitized to a flat range instead of producing `scaleY = Infinity`.
+* `DepthChartPainter.shouldRepaint` ignored `baseUnit`/`quoteUnit`/
+  `offset`, leaving stale popup formatting.
+* `drawDashedLine` silently drew nothing for reversed coordinates; the
+  line is now normalized, with a solid-line fallback for diagonals.
+* Date labels no longer stamp `DateTime.now()` on bars without a
+  timestamp; the pattern is derived once per painter, not per label.
+* Empty `calcParams`/color lists, popup clamp bounds in tiny charts and
+  zero grid counts no longer throw inside paint.
+* MACD/BOLL/volume header labels treat 0 as a value, not as "missing"
+  (null-only warm-up contract).
+* `pubspec.yaml`: incoherent `flutter: ">=1.17.0"` template leftover
+  removed (the Dart SDK constraint is the source of truth).
+
+### Performance
+
+* Depth chart: paints, paths and label/popup painters are long-lived in
+  `DepthRendererCache` (previously the full set was reallocated per
+  build and per long-press frame).
+* `ChartPainter` overlay paints hoisted into `ChartRendererCache` —
+  gesture-driven painter rebuilds allocate no render objects.
+* `ChartViewport.indexOfDataX` is O(1) rounding on the uniform grid
+  (previously a recursive binary search per lookup); the depth chart
+  index lookup likewise.
+* `TextPainterCache` is LRU with capacity 96 and is cleared when the
+  style configuration changes (previously FIFO with stale entries).
+* Shared helpers in `render/render_util.dart` deduplicate the value-line
+  draw and the axis label style.
+
 ## 0.1.0
 
 Structural rewrite: clearer layering, better performance and stability.

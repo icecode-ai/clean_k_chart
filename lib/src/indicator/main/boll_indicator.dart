@@ -17,21 +17,19 @@ class BOLLIndicator extends MainIndicator {
   (double, double) getMaxMinValue(KLineEntity entity, double min, double max) {
     final boll = entity.boll;
     if (boll == null) return (min, max);
-    var result = (min, max);
-    if (boll.dn != null) {
-      result = (math.min(result.$1, boll.dn!), result.$2);
-    }
-    if (boll.up != null) {
-      result = (result.$1, math.max(result.$2, boll.up!));
-    }
-    return result;
+    return (math.min(min, boll.dn), math.max(max, boll.up));
   }
 
   @override
   void calc(List<KLineEntity> data) {
     final n = calcParams[0];
     final k = calcParams[1];
-    if (n <= 1) return;
+    if (n <= 1) {
+      for (final entity in data) {
+        entity.boll = null;
+      }
+      return;
+    }
 
     // Sliding-window MA of the close price.
     final ma = List<double?>.filled(data.length, null);
@@ -58,7 +56,8 @@ class BOLLIndicator extends MainIndicator {
         final diff = data[j].close - mid;
         squaredDiff += diff * diff;
       }
-      final md = math.sqrt(squaredDiff / (n - 1));
+      // Population standard deviation (÷n), per the canonical definition.
+      final md = math.sqrt(squaredDiff / n);
       entity.boll = BollValue(mid: mid, up: mid + k * md, dn: mid - k * md);
     }
   }

@@ -33,17 +33,17 @@ class MACDPainter extends SecondaryIndicatorPainter {
           text: 'MACD(${indicator.calcParams.join(',')}) ',
           style: labelStyle(chartColors.defaultTextColor),
         ),
-        if (entity.macd != null && entity.macd != 0)
+        if (entity.macd != null)
           TextSpan(
             text: 'MACD:${formatNumber(entity.macd!, precision)}  ',
             style: labelStyle(style.macdColor),
           ),
-        if (entity.dif != null && entity.dif != 0)
+        if (entity.dif != null)
           TextSpan(
             text: 'DIF:${formatNumber(entity.dif!, precision)}  ',
             style: labelStyle(style.difColor),
           ),
-        if (entity.dea != null && entity.dea != 0)
+        if (entity.dea != null)
           TextSpan(
             text: 'DEA:${formatNumber(entity.dea!, precision)}',
             style: labelStyle(style.deaColor),
@@ -83,14 +83,14 @@ class MACDPainter extends SecondaryIndicatorPainter {
         );
       }
     }
-    if (lastPoint.dif != null && lastPoint.dif != 0 && curPoint.dif != null) {
+    if (lastPoint.dif != null && curPoint.dif != null) {
       canvas.drawLine(
         Offset(curX, getY(curPoint.dif!)),
         Offset(lastX, getY(lastPoint.dif!)),
         _linePaint..color = style.difColor,
       );
     }
-    if (lastPoint.dea != null && lastPoint.dea != 0 && curPoint.dea != null) {
+    if (lastPoint.dea != null && curPoint.dea != null) {
       canvas.drawLine(
         Offset(curX, getY(curPoint.dea!)),
         Offset(lastX, getY(lastPoint.dea!)),
