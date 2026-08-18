@@ -1,31 +1,35 @@
-import 'package:clean_k_chart/src/style/indicator_style.dart';
-import 'package:clean_k_chart/src/model/entity/macd_entity.dart';
+import 'package:clean_k_chart/src/model/entity/k_line_entity.dart';
 import 'package:clean_k_chart/src/render/indicator_view/indicator_painter.dart';
+import 'package:clean_k_chart/src/style/indicator_style.dart';
 import 'package:clean_k_chart/src/style/k_chart_style.dart' show KChartColors;
 import 'package:clean_k_chart/src/utils/number_util.dart';
 import 'package:flutter/painting.dart';
 
-class CCIPainter extends SecondaryIndicatorPainter<MACDEntity, CCIStyle> {
-  late final Paint _linePaint;
+/// Painter for [CCIIndicator].
+class CCIPainter extends SecondaryIndicatorPainter {
+  final CCIStyle style;
 
-  CCIPainter(super.indicator) {
-    _linePaint = Paint()
-      ..isAntiAlias = true
-      ..filterQuality = FilterQuality.high
-      ..strokeWidth = indicatorStyle.lineWidth;
+  final Paint _linePaint = Paint()
+    ..isAntiAlias = true
+    ..filterQuality = FilterQuality.high;
+
+  CCIPainter(super.indicator, {CCIStyle style = const CCIStyle()})
+    : style = style {
+    _linePaint.strokeWidth = style.lineWidth;
   }
 
   @override
-  TextSpan? drawFigure(
-    MACDEntity entity,
+  TextSpan? buildLabel(
+    KLineEntity entity,
     int precision,
     KChartColors chartColors,
   ) {
-    if (entity.cci == null) return null;
+    final cci = entity.cci;
+    if (cci == null) return null;
     return TextSpan(
       text:
-          "CCI(${indicator.calcParams.first}):${formatNumber(entity.cci!, precision)}",
-      style: getTextStyle(indicatorStyle.cciColor),
+          'CCI(${indicator.calcParams.first}):${formatNumber(cci, precision)}',
+      style: labelStyle(style.cciColor),
     );
   }
 
@@ -38,59 +42,56 @@ class CCIPainter extends SecondaryIndicatorPainter<MACDEntity, CCIStyle> {
     required int fixedLength,
     required Rect chartRect,
   }) {
-    double jumpStep = maxValue - minValue;
-    late int jumpValue;
-    if (jumpStep >= 100) {
-      jumpValue = 100;
-    } else if (jumpStep >= 10) {
-      jumpValue = 10;
-    } else {
-      jumpValue = 1;
-    }
+    // CCI values are wide — round labels to a coarse step.
+    final jumpStep = maxValue - minValue;
+    final jumpValue = jumpStep >= 100 ? 100 : (jumpStep >= 10 ? 10 : 1);
+    _paintRounded(canvas, style, maxValue, jumpValue, chartRect, atTop: true);
+    _paintRounded(canvas, style, minValue, jumpValue, chartRect, atTop: false);
+  }
 
-    /// max
-    TextPainter maxTp = TextPainter(
-      text: TextSpan(
-        text:
-            "${NumberUtil.formatFixed((maxValue / jumpValue).round() * jumpValue, 0) ?? ''}",
+  void _paintRounded(
+    Canvas canvas,
+    TextStyle style,
+    double value,
+    int jumpValue,
+    Rect chartRect, {
+    required bool atTop,
+  }) {
+    final rounded = (value / jumpValue).round() * jumpValue;
+    textPainter
+      ..text = TextSpan(
+        text: NumberUtil.formatFixed(rounded, 0) ?? '',
         style: style,
-      ),
-      textDirection: TextDirection.ltr,
-    );
-    maxTp.layout();
-    maxTp.paint(canvas, Offset(chartRect.width - maxTp.width, chartRect.top));
-
-    /// min
-    TextPainter minTp = TextPainter(
-      text: TextSpan(
-        text:
-            "${NumberUtil.formatFixed((minValue / jumpValue).round() * jumpValue, 0) ?? ''}",
-        style: style,
-      ),
-      textDirection: TextDirection.ltr,
-    );
-    minTp.layout();
-    minTp.paint(
+      )
+      ..layout();
+    textPainter.paint(
       canvas,
-      Offset(chartRect.width - minTp.width, chartRect.bottom - minTp.height),
+      Offset(
+        chartRect.width - textPainter.width,
+        atTop ? chartRect.top : chartRect.bottom - textPainter.height,
+      ),
     );
   }
 
   @override
   void drawChart(
-    MACDEntity lastPoint,
-    MACDEntity curPoint,
+    KLineEntity lastPoint,
+    KLineEntity curPoint,
     double lastX,
     double curX,
-    GetYFunction getY,
+    ValueY getY,
     Canvas canvas,
     KChartColors chartColors,
   ) {
-    if (curPoint.cci == null || lastPoint.cci == null) return;
-    canvas.drawLine(
-      Offset(curX, getY(curPoint.cci!)),
-      Offset(lastX, getY(lastPoint.cci!)),
-      _linePaint..color = indicatorStyle.cciColor,
+    drawSingleLine(
+      lastPoint.cci,
+      curPoint.cci,
+      lastX,
+      curX,
+      getY,
+      canvas,
+      _linePaint,
+      style.cciColor,
     );
   }
 }

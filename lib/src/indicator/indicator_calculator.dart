@@ -1,63 +1,68 @@
-import 'package:clean_k_chart/src/model/entity/k_line_entity.dart';
 import 'package:clean_k_chart/src/indicator/indicator.dart';
+import 'package:clean_k_chart/src/model/entity/k_line_entity.dart';
 
 /// Batch runner for indicator calculations over a K-line data list.
+///
+/// The chart widget does NOT trigger indicator calculations itself — call
+/// [calculateAll] (or individual [Indicator.calc]s) after loading data,
+/// then pass the list to [KChartWidget]:
+///
+/// ```dart
+/// IndicatorCalculator.calculateAll(data, mainIndicators, secondaryIndicators);
+/// ```
 class IndicatorCalculator {
-  static calculateAll(
+  IndicatorCalculator._();
+
+  /// Calculates volume MA5/MA10 plus every given indicator over [dataList].
+  static void calculateAll(
     List<KLineEntity> dataList,
-    List<MainIndicator> mainLi,
-    List<SecondaryIndicator> secondaryLi,
+    List<MainIndicator> mainIndicators,
+    List<SecondaryIndicator> secondaryIndicators,
   ) {
     calcVolumeMA(dataList);
-    calculateIndicators(dataList, mainLi, secondaryLi);
+    calculateIndicators(dataList, mainIndicators, secondaryIndicators);
   }
 
-  static calculateIndicators(
+  /// Calculates every given indicator over [dataList] (volume MA excluded).
+  static void calculateIndicators(
     List<KLineEntity> dataList,
-    List<MainIndicator> mainLi,
-    List<SecondaryIndicator> secondaryLi,
+    List<MainIndicator> mainIndicators,
+    List<SecondaryIndicator> secondaryIndicators,
   ) {
-    /// calculate main state
-    mainLi.forEach((e) {
-      e.calc(dataList);
-    });
-
-    /// calculate secondary state
-    secondaryLi.forEach((e) {
-      e.calc(dataList);
-    });
+    for (final indicator in mainIndicators) {
+      indicator.calc(dataList);
+    }
+    for (final indicator in secondaryIndicators) {
+      indicator.calc(dataList);
+    }
   }
 
-  static calculateIndicator(List<KLineEntity> dataList, Indicator indicator) {
+  /// Calculates a single indicator over [dataList].
+  static void calculateIndicator(
+    List<KLineEntity> dataList,
+    Indicator indicator,
+  ) {
     indicator.calc(dataList);
   }
 
+  /// Calculates the MA5/MA10 volume moving averages over [dataList].
   static void calcVolumeMA(List<KLineEntity> dataList) {
-    double volumeMa5 = 0;
-    double volumeMa10 = 0;
+    _calcVolumeMA(dataList, 5);
+    _calcVolumeMA(dataList, 10);
+  }
 
-    for (int i = 0; i < dataList.length; i++) {
-      KLineEntity entry = dataList[i];
-
-      volumeMa5 += entry.vol;
-      volumeMa10 += entry.vol;
-
-      if (i == 4) {
-        entry.MA5Volume = (volumeMa5 / 5);
-      } else if (i > 4) {
-        volumeMa5 -= dataList[i - 5].vol;
-        entry.MA5Volume = volumeMa5 / 5;
-      } else {
-        entry.MA5Volume = 0;
+  static void _calcVolumeMA(List<KLineEntity> dataList, int period) {
+    var sum = 0.0;
+    for (var i = 0; i < dataList.length; i++) {
+      sum += dataList[i].vol;
+      if (i >= period) {
+        sum -= dataList[i - period].vol;
       }
-
-      if (i == 9) {
-        entry.MA10Volume = volumeMa10 / 10;
-      } else if (i > 9) {
-        volumeMa10 -= dataList[i - 10].vol;
-        entry.MA10Volume = volumeMa10 / 10;
+      final value = i >= period - 1 ? sum / period : null;
+      if (period == 5) {
+        dataList[i].ma5Volume = value;
       } else {
-        entry.MA10Volume = 0;
+        dataList[i].ma10Volume = value;
       }
     }
   }

@@ -1,101 +1,71 @@
 import 'package:decimal/decimal.dart';
 import 'package:intl/intl.dart';
 
+/// Number formatting helpers for chart labels.
 class NumberUtil {
-  static String formatCompact(double n, [int precision = 2]) {
-    try {
-      if (n >= 1e9) {
-        n /= 1e9;
-        return "${n.toStringAsFixed(precision)}B";
-      } else if (n >= 1e6) {
-        n /= 1e6;
-        return "${n.toStringAsFixed(precision)}M";
-      } else if (n >= 1e4) {
-        n /= 1e3;
-        return "${n.toStringAsFixed(precision)}K";
-      } else {
-        return n.toStringAsFixed(precision);
-      }
-    } catch (e) {
-      return n.toString();
+  NumberUtil._();
+
+  static final Map<String, NumberFormat> _formats = {};
+
+  static NumberFormat _format(String pattern) =>
+      _formats.putIfAbsent(pattern, () => NumberFormat(pattern, 'en_US'));
+
+  /// Compact volume formatting: `1.23B` / `4.56M` / `7.89K` (threshold 10⁴).
+  static String formatCompact(double value, [int precision = 2]) {
+    if (value >= 1e9) {
+      return '${(value / 1e9).toStringAsFixed(precision)}B';
     }
+    if (value >= 1e6) {
+      return '${(value / 1e6).toStringAsFixed(precision)}M';
+    }
+    if (value >= 1e4) {
+      return '${(value / 1e3).toStringAsFixed(precision)}K';
+    }
+    return value.toStringAsFixed(precision);
   }
 
-  // static int getDecimalLength(double b) {
-  //   String s = b.toString();
-  //   int dotIndex = s.indexOf(".");
-  //   if (dotIndex < 0) {
-  //     return 0;
-  //   } else {
-  //     return s.length - dotIndex - 1;
-  //   }
-  // }
-  //
-  // static int getMaxDecimalLength(double a, double b, double c, double d) {
-  //   int result = max(getDecimalLength(a), getDecimalLength(b));
-  //   result = max(result, getDecimalLength(c));
-  //   result = max(result, getDecimalLength(d));
-  //   return result;
-  // }
-
-  static bool checkNotNullOrZero(double? a) {
-    if (a == null || a == 0) {
-      return false;
-    } else if (a.abs().toStringAsFixed(4) == "0.0000") {
-      return false;
-    } else {
-      return true;
-    }
-  }
-
+  /// Groups the integer part and pads/truncates the fraction to exactly
+  /// [precision] digits. Returns null when [value] cannot be parsed.
   static String? formatFixed(
     dynamic value,
     int precision, [
     String pattern = '#,##0',
   ]) {
     try {
-      String number = Decimal.parse(value.toString())
-          .toString(); // avoid scientific notation format e-10
-      List<String> parts = number.split('.');
-      String integerPart = NumberFormat(
-        pattern,
-        'en_US',
-      ).format(num.parse(parts.first));
+      // Decimal.parse avoids scientific notation like 1e-10.
+      final parts = Decimal.parse(value.toString()).toString().split('.');
+      final integerPart = _format(pattern).format(num.parse(parts.first));
       if (precision == 0) {
         return integerPart;
       }
-      String fractionalPart = (parts.length <= 1 ? '' : parts.last).padRight(
+      final fraction = (parts.length <= 1 ? '' : parts.last).padRight(
         precision,
         '0',
       );
-      fractionalPart = fractionalPart.substring(0, precision);
-      return '$integerPart.$fractionalPart';
-    } catch (e) {
+      return '$integerPart.${fraction.substring(0, precision)}';
+    } catch (_) {
       return null;
     }
   }
 
+  /// Like [formatFixed] but floors the value to [precision] fraction digits.
+  /// Returns null when [value] cannot be parsed.
   static String? format(
     dynamic value,
     int precision, [
     String pattern = '#,##0',
   ]) {
     try {
-      // avoid scientific notation format e-10
-      String number = Decimal.parse(value.toString())
+      final parts = Decimal.parse(value.toString())
           .floor(scale: precision)
-          .toString();
-      List<String> parts = number.split('.');
-      String integerPart = NumberFormat(
-        pattern,
-        'en_US',
-      ).format(num.parse(parts.first));
+          .toString()
+          .split('.');
+      final integerPart = _format(pattern).format(num.parse(parts.first));
       if (precision == 0 && parts.length == 1) {
         return integerPart;
       }
-      String fractionalPart = parts.last;
-      return '$integerPart.$fractionalPart';
-    } catch (e) {
+      return '$integerPart.${parts.last}';
+    } catch (_) {
       return null;
     }
   }

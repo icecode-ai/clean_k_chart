@@ -1,48 +1,41 @@
-import 'dart:math';
+import 'dart:math' as math;
 
-import 'package:clean_k_chart/src/model/entity/k_line_entity.dart';
-import 'package:clean_k_chart/src/model/entity/macd_entity.dart';
-import 'package:clean_k_chart/src/style/indicator_style.dart';
 import 'package:clean_k_chart/src/indicator/indicator.dart';
+import 'package:clean_k_chart/src/model/entity/k_line_entity.dart';
 
-class WRIndicator extends SecondaryIndicator<MACDEntity, WRStyle> {
-  WRIndicator({super.indicatorStyle = const WRStyle()})
-    : super(name: 'volumeRatio', shortName: 'WR', calcParams: const [26, 6]);
+/// Williams %R.
+///
+/// Params: `[period]` (defaults to `[14]`).
+///
+/// `WR = −100 × (highestHigh − close) / (highestHigh − lowestLow)`
+/// over the last [period] bars; values are in [-100, 0].
+class WRIndicator extends SecondaryIndicator {
+  WRIndicator({super.calcParams = const [14]})
+    : assert(calcParams.isNotEmpty),
+      super(name: 'williamsR', shortName: 'WR');
 
   @override
-  (double, double) getMaxMinValue(
-    KLineEntity entity,
-    double minV,
-    double maxV,
-  ) {
+  (double, double) getMaxMinValue(KLineEntity entity, double min, double max) {
     return (-100, 0);
   }
 
   @override
-  void calc(List<KLineEntity> dataList) {
-    double r;
-    for (int i = 0; i < dataList.length; i++) {
-      KLineEntity entity = dataList[i];
-      int startIndex = i - 14;
-      if (startIndex < 0) {
-        startIndex = 0;
+  void calc(List<KLineEntity> data) {
+    final period = calcParams.first;
+    for (var i = 0; i < data.length; i++) {
+      final entity = data[i];
+      if (i < period - 1) {
+        entity.wr = null;
+        continue;
       }
-      double max14 = double.minPositive;
-      double min14 = double.maxFinite;
-      for (int index = startIndex; index <= i; index++) {
-        max14 = max(max14, dataList[index].high);
-        min14 = min(min14, dataList[index].low);
+      var highest = -double.infinity;
+      var lowest = double.infinity;
+      for (var j = i - period + 1; j <= i; j++) {
+        highest = math.max(highest, data[j].high);
+        lowest = math.min(lowest, data[j].low);
       }
-      if (i < 13) {
-        entity.r = -10;
-      } else {
-        r = -100 * (max14 - dataList[i].close) / (max14 - min14);
-        if (r.isNaN) {
-          entity.r = null;
-        } else {
-          entity.r = r;
-        }
-      }
+      final wr = -100 * (highest - entity.close) / (highest - lowest);
+      entity.wr = wr.isNaN ? null : wr;
     }
   }
 }

@@ -1,56 +1,47 @@
-import 'dart:math';
+import 'dart:math' as math;
 
-import 'package:clean_k_chart/src/model/entity/k_line_entity.dart';
-import 'package:clean_k_chart/src/model/entity/macd_entity.dart';
-import 'package:clean_k_chart/src/style/indicator_style.dart';
 import 'package:clean_k_chart/src/indicator/indicator.dart';
+import 'package:clean_k_chart/src/indicator/indicator_util.dart';
+import 'package:clean_k_chart/src/model/entity/k_line_entity.dart';
 
-/**
- * RSI
- * RSI = SUM(MAX(CLOSE - REF(CLOSE,1),0),N) / SUM(ABS(CLOSE - REF(CLOSE,1)),N) × 100
- */
-class RSIIndicator extends SecondaryIndicator<MACDEntity, RSIStyle> {
-  RSIIndicator({super.indicatorStyle = const RSIStyle()})
-    : super(
-        name: 'relativeStrengthIndex',
-        shortName: 'RSI',
-        calcParams: const [6, 12, 24],
-      );
+/// Relative strength index.
+///
+/// Params: `[period]` (defaults to `[14]`).
+///
+/// `RSI = SUM(MAX(close − prevClose, 0), N) / SUM(|close − prevClose|, N) × 100`
+/// using Wilder smoothing.
+class RSIIndicator extends SecondaryIndicator {
+  RSIIndicator({super.calcParams = const [14]})
+    : assert(calcParams.isNotEmpty),
+      super(name: 'relativeStrengthIndex', shortName: 'RSI');
 
   @override
-  (double, double) getMaxMinValue(
-    KLineEntity entity,
-    double minV,
-    double maxV,
-  ) {
-    if (entity.rsi != null) {
-      minV = min(minV, entity.rsi!);
-      maxV = max(maxV, entity.rsi!);
-    }
-    return (minV, maxV);
+  (double, double) getMaxMinValue(KLineEntity entity, double min, double max) {
+    return extendRange(min, max, entity.rsi);
   }
 
   @override
-  void calc(List<KLineEntity> dataList) {
+  void calc(List<KLineEntity> data) {
+    final period = calcParams.first;
     double? rsi;
-    double rsiABSEma = 0;
-    double rsiMaxEma = 0;
-    for (int i = 0; i < dataList.length; i++) {
-      KLineEntity entity = dataList[i];
-      final double closePrice = entity.close;
+    var rsiABSEma = 0.0;
+    var rsiMaxEma = 0.0;
+
+    for (var i = 0; i < data.length; i++) {
+      final entity = data[i];
       if (i == 0) {
         rsi = 0;
         rsiABSEma = 0;
         rsiMaxEma = 0;
       } else {
-        double rMax = max(0, closePrice - dataList[i - 1].close.toDouble());
-        double rAbs = (closePrice - dataList[i - 1].close.toDouble()).abs();
-
-        rsiMaxEma = (rMax + (14 - 1) * rsiMaxEma) / 14;
-        rsiABSEma = (rAbs + (14 - 1) * rsiABSEma) / 14;
-        rsi = (rsiMaxEma / rsiABSEma) * 100;
+        final diff = entity.close - data[i - 1].close;
+        final rMax = math.max(0.0, diff);
+        final rAbs = diff.abs();
+        rsiMaxEma = (rMax + (period - 1) * rsiMaxEma) / period;
+        rsiABSEma = (rAbs + (period - 1) * rsiABSEma) / period;
+        rsi = rsiMaxEma / rsiABSEma * 100;
       }
-      if (i < 13) rsi = null;
+      if (i < period - 1) rsi = null;
       if (rsi != null && rsi.isNaN) rsi = null;
       entity.rsi = rsi;
     }

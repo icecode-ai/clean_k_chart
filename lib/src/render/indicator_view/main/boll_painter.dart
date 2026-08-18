@@ -1,47 +1,50 @@
-import 'package:clean_k_chart/src/style/indicator_style.dart';
-import 'package:clean_k_chart/src/model/entity/boll_entity.dart';
-import 'package:clean_k_chart/src/model/entity/candle_entity.dart';
+import 'package:clean_k_chart/src/model/entity/k_line_entity.dart';
 import 'package:clean_k_chart/src/render/indicator_view/indicator_painter.dart';
+import 'package:clean_k_chart/src/style/indicator_style.dart';
 import 'package:clean_k_chart/src/style/k_chart_style.dart' show KChartColors;
 import 'package:flutter/painting.dart';
 
-class BOLLPainter extends IndicatorPainter<CandleEntity, BOLLStyle> {
-  late final Paint _linePaint;
-  late final Paint _fillPaint;
+/// Painter for [BOLLIndicator]: upper / lower / mid lines with a fill
+/// between the bands.
+class BOLLPainter extends IndicatorPainter {
+  final BOLLStyle style;
 
-  BOLLPainter(super.indicator) {
-    _linePaint = Paint()
-      ..isAntiAlias = true
-      ..filterQuality = FilterQuality.high
-      ..strokeWidth = indicatorStyle.lineWidth;
+  final Paint _linePaint = Paint()
+    ..isAntiAlias = true
+    ..filterQuality = FilterQuality.high;
+  final Paint _fillPaint = Paint()..isAntiAlias = true;
+  final Path _fillPath = Path();
 
-    _fillPaint = Paint()..color = indicatorStyle.fillColor;
+  BOLLPainter(super.indicator, {BOLLStyle style = const BOLLStyle()})
+    : style = style {
+    _linePaint.strokeWidth = style.lineWidth;
+    _fillPaint.color = style.fillColor;
   }
 
   @override
-  TextSpan? drawFigure(
-    CandleEntity entity,
+  TextSpan? buildLabel(
+    KLineEntity entity,
     int precision,
     KChartColors chartColors,
   ) {
-    if (entity.boll == null) return null;
-    Boll value = entity.boll!;
+    final boll = entity.boll;
+    if (boll == null) return null;
     return TextSpan(
       children: [
-        if (value.mid != null && value.mid != 0)
+        if (boll.mid != null && boll.mid != 0)
           TextSpan(
-            text: "BOLL:${formatNumber(value.mid!, precision)}  ",
-            style: TextStyle(fontSize: 10, color: indicatorStyle.bollColor),
+            text: 'BOLL:${formatNumber(boll.mid!, precision)}  ',
+            style: labelStyle(style.bollColor),
           ),
-        if (value.up != null && value.up != 0)
+        if (boll.up != null && boll.up != 0)
           TextSpan(
-            text: "UB:${formatNumber(value.up!, precision)}  ",
-            style: TextStyle(fontSize: 10, color: indicatorStyle.ubColor),
+            text: 'UB:${formatNumber(boll.up!, precision)}  ',
+            style: labelStyle(style.ubColor),
           ),
-        if (value.dn != null && value.dn != 0)
+        if (boll.dn != null && boll.dn != 0)
           TextSpan(
-            text: "LB:${formatNumber(value.dn!, precision)}",
-            style: TextStyle(fontSize: 10, color: indicatorStyle.lbColor),
+            text: 'LB:${formatNumber(boll.dn!, precision)}',
+            style: labelStyle(style.lbColor),
           ),
       ],
     );
@@ -49,57 +52,54 @@ class BOLLPainter extends IndicatorPainter<CandleEntity, BOLLStyle> {
 
   @override
   void drawChart(
-    CandleEntity lastPoint,
-    CandleEntity curPoint,
+    KLineEntity lastPoint,
+    KLineEntity curPoint,
     double lastX,
     double curX,
-    GetYFunction getY,
+    ValueY getY,
     Canvas canvas,
     KChartColors chartColors,
   ) {
-    if (lastPoint.boll == null || curPoint.boll == null) return;
-    final List<Offset> _positionLi = [];
+    final lastBoll = lastPoint.boll;
+    final curBoll = curPoint.boll;
+    if (lastBoll == null || curBoll == null) return;
 
-    if (curPoint.boll!.up != null && lastPoint.boll!.up != null) {
-      _positionLi.add(Offset(curX, getY(curPoint.boll!.up!))); //0
-      _positionLi.add(Offset(lastX, getY(lastPoint.boll!.up!))); //1
-      /// UB
+    final curUp = curBoll.up;
+    final lastUp = lastBoll.up;
+    final curDn = curBoll.dn;
+    final lastDn = lastBoll.dn;
+
+    if (curUp != null && lastUp != null) {
       canvas.drawLine(
-        _positionLi[0],
-        _positionLi[1],
-        _linePaint..color = indicatorStyle.ubColor,
+        Offset(curX, getY(curUp)),
+        Offset(lastX, getY(lastUp)),
+        _linePaint..color = style.ubColor,
       );
     }
-
-    if (curPoint.boll!.dn != null && lastPoint.boll!.dn != null) {
-      _positionLi.add(Offset(lastX, getY(lastPoint.boll!.dn!))); //2
-      _positionLi.add(Offset(curX, getY(curPoint.boll!.dn!))); //3
-
-      /// LB
+    if (curDn != null && lastDn != null) {
       canvas.drawLine(
-        _positionLi[2],
-        _positionLi[3],
-        _linePaint..color = indicatorStyle.lbColor,
+        Offset(lastX, getY(lastDn)),
+        Offset(curX, getY(curDn)),
+        _linePaint..color = style.lbColor,
       );
     }
-
-    if (_positionLi.length == 4) {
-      Path _fillPath = Path()
-        ..moveTo(_positionLi[0].dx, _positionLi[0].dy)
-        ..lineTo(_positionLi[1].dx, _positionLi[1].dy)
-        ..lineTo(_positionLi[2].dx, _positionLi[2].dy)
-        ..lineTo(_positionLi[3].dx, _positionLi[3].dy)
+    if (curUp != null && lastUp != null && curDn != null && lastDn != null) {
+      _fillPath
+        ..reset()
+        ..moveTo(curX, getY(curUp))
+        ..lineTo(lastX, getY(lastUp))
+        ..lineTo(lastX, getY(lastDn))
+        ..lineTo(curX, getY(curDn))
         ..close();
-
       canvas.drawPath(_fillPath, _fillPaint);
     }
-
-    if (curPoint.boll!.mid != null && lastPoint.boll!.mid != null) {
-      /// BOLL
+    final curMid = curBoll.mid;
+    final lastMid = lastBoll.mid;
+    if (curMid != null && lastMid != null) {
       canvas.drawLine(
-        Offset(curX, getY(curPoint.boll!.mid!)),
-        Offset(lastX, getY(lastPoint.boll!.mid!)),
-        _linePaint..color = indicatorStyle.bollColor,
+        Offset(curX, getY(curMid)),
+        Offset(lastX, getY(lastMid)),
+        _linePaint..color = style.bollColor,
       );
     }
   }

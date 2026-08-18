@@ -6,6 +6,6 @@ class DepthEntity {
 
   @override
   String toString() {
-    return 'Data{price: $price, vol: $vol}';
+    return 'DepthEntity{price: $price, vol: $vol}';
   }
 }

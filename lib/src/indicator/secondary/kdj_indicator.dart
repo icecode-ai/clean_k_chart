@@ -1,68 +1,59 @@
-import 'dart:math';
+import 'dart:math' as math;
 
-import 'package:clean_k_chart/src/model/entity/k_line_entity.dart';
-import 'package:clean_k_chart/src/model/entity/macd_entity.dart';
-import 'package:clean_k_chart/src/style/indicator_style.dart';
 import 'package:clean_k_chart/src/indicator/indicator.dart';
+import 'package:clean_k_chart/src/indicator/indicator_util.dart';
+import 'package:clean_k_chart/src/model/entity/k_line_entity.dart';
 
-class KDJIndicator extends SecondaryIndicator<MACDEntity, KDJStyle> {
-  KDJIndicator({super.indicatorStyle = const KDJStyle()})
-    : super(
-        name: 'stoch',
-        shortName: 'KDJ',
-        calcParams: const [], //[9, 3, 3], [9, 1, 3],
-      );
+/// Stochastic oscillator KDJ.
+///
+/// Params: `[n, kPeriod, dPeriod]` (defaults to `[9, 3, 3]`): `n` is the
+/// look-back window for RSV, `kPeriod`/`dPeriod` the K/D smoothing periods.
+class KDJIndicator extends SecondaryIndicator {
+  KDJIndicator({super.calcParams = const [9, 3, 3]})
+    : assert(calcParams.length >= 3),
+      super(name: 'stochasticOscillator', shortName: 'KDJ');
 
   @override
-  (double, double) getMaxMinValue(MACDEntity entity, double minV, double maxV) {
-    if (entity.k != null) {
-      minV = min(minV, entity.k!);
-      maxV = max(maxV, entity.k!);
-    }
-    if (entity.d != null) {
-      minV = min(minV, entity.d!);
-      maxV = max(maxV, entity.d!);
-    }
-    if (entity.j != null) {
-      minV = min(minV, entity.j!);
-      maxV = max(maxV, entity.j!);
-    }
-    return (minV, maxV);
+  (double, double) getMaxMinValue(KLineEntity entity, double min, double max) {
+    var result = extendRange(min, max, entity.k);
+    result = extendRange(result.$1, result.$2, entity.d);
+    result = extendRange(result.$1, result.$2, entity.j);
+    return result;
   }
 
   @override
-  void calc(List<KLineEntity> dataList) {
+  void calc(List<KLineEntity> data) {
+    if (data.isEmpty) return;
+    final n = calcParams[0];
+    final kPeriod = calcParams[1];
+    final dPeriod = calcParams[2];
+
     var preK = 50.0;
     var preD = 50.0;
-    final tmp = dataList.first;
-    tmp.k = preK;
-    tmp.d = preD;
-    tmp.j = 50.0;
-    for (int i = 1; i < dataList.length; i++) {
-      final entity = dataList[i];
-      final n = max(0, i - 8);
+    data.first
+      ..k = preK
+      ..d = preD
+      ..j = 50.0;
+
+    for (var i = 1; i < data.length; i++) {
+      final entity = data[i];
       var low = entity.low;
       var high = entity.high;
-      for (int j = n; j < i; j++) {
-        final t = dataList[j];
-        if (t.low < low) {
-          low = t.low;
-        }
-        if (t.high > high) {
-          high = t.high;
-        }
+      for (var j = math.max(0, i - n + 1); j < i; j++) {
+        low = math.min(low, data[j].low);
+        high = math.max(high, data[j].high);
       }
-      final cur = entity.close;
-      var rsv = (cur - low) * 100.0 / (high - low);
-      rsv = rsv.isNaN ? 0 : rsv;
-      final k = (2 * preK + rsv) / 3.0;
-      final d = (2 * preD + k) / 3.0;
+      var rsv = (entity.close - low) * 100.0 / (high - low);
+      if (rsv.isNaN) rsv = 0;
+      final k = ((kPeriod - 1) * preK + rsv) / kPeriod;
+      final d = ((dPeriod - 1) * preD + k) / dPeriod;
       final j = 3 * k - 2 * d;
       preK = k;
       preD = d;
-      entity.k = k;
-      entity.d = d;
-      entity.j = j;
+      entity
+        ..k = k
+        ..d = d
+        ..j = j;
     }
   }
 }

@@ -1,45 +1,44 @@
 import 'package:flutter/material.dart' show Color;
 
+/// Color configuration for [DepthChart].
+///
+/// Up/down colors follow the red-up / green-down convention, consistent
+/// with [KChartColors]: the buy (bid) side uses [upColor], the sell (ask)
+/// side uses [dnColor].
 class DepthChartColors {
-  /// depth color
+  /// Buy side line / fill colors.
   final Color upColor;
   final Color upFillPathColor;
+
+  /// Sell side line / fill colors.
   final Color dnColor;
   final Color dnFillPathColor;
 
-  /// default text color: apply for text at grid
+  /// Default text color (axis labels).
   final Color defaultTextColor;
 
-  ///value border color after selection
+  /// Border color of the selection popup.
   final Color selectBorderColor;
 
-  ///background color when value selected
+  /// Background color of the selection popup.
   final Color selectFillColor;
 
-  ///color of annotation content
+  /// Popup text color.
   final Color annotationColor;
 
-  ///color of cross dash line
+  /// Crosshair line color.
   final Color crossColor;
 
-  /// barrier color
+  /// Overlay barrier color while selecting.
   final Color barrierColor;
 
-  /// constructor chart color
   const DepthChartColors({
-    ///depth color
-    this.upColor = const Color(0xFF14AD8F),
-    this.upFillPathColor = const Color(0x2314AD8F),
-    this.dnColor = const Color(0xFFD5405D),
-    this.dnFillPathColor = const Color(0x23D5405D),
-
-    ///value border color after selection
+    this.upColor = const Color(0xFFD5405D),
+    this.upFillPathColor = const Color(0x23D5405D),
+    this.dnColor = const Color(0xFF14AD8F),
+    this.dnFillPathColor = const Color(0x2314AD8F),
     this.selectBorderColor = const Color(0xFF909196),
-
-    ///background color when value selected
     this.selectFillColor = const Color(0xFFFFFFFF),
-
-    ///color of annotation content
     this.defaultTextColor = const Color(0xFF909196),
     this.annotationColor = const Color(0xFF222223),
     this.crossColor = const Color(0xFF191919),
@@ -47,16 +46,26 @@ class DepthChartColors {
   });
 }
 
+/// Dimension configuration for [DepthChart].
 class DepthChartStyle {
   final double lineWidth;
+
+  /// Popup corner radius.
   final double radius;
+
+  /// Popup border width.
   final double strokeWidth;
 
+  /// Gap between popup text rows.
   final double space;
+
+  /// Popup inner padding.
   final double padding;
 
+  /// Selection dot radius.
   final double dotRadius;
 
+  /// Crosshair line width.
   final double crossWidth;
 
   const DepthChartStyle({

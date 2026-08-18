@@ -1,8 +1,10 @@
-// ignore_for_file: non_constant_identifier_names,library_prefixes,unused_import,camel_case_types
+/// Volume fields of a candlestick bar.
 mixin VolumeEntity {
-  late double open;
-  late double close;
   late double vol;
-  double? MA5Volume;
-  double? MA10Volume;
+
+  /// 5-period volume moving average; null while warming up.
+  double? ma5Volume;
+
+  /// 10-period volume moving average; null while warming up.
+  double? ma10Volume;
 }

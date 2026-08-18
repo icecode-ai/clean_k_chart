@@ -1,63 +1,89 @@
-import 'package:clean_k_chart/src/style/indicator_style.dart';
-import 'package:clean_k_chart/src/model/entity/candle_entity.dart';
+import 'package:clean_k_chart/src/model/entity/k_line_entity.dart';
 import 'package:clean_k_chart/src/render/indicator_view/indicator_painter.dart';
+import 'package:clean_k_chart/src/style/indicator_style.dart';
 import 'package:clean_k_chart/src/style/k_chart_style.dart' show KChartColors;
 import 'package:flutter/painting.dart';
 
-class MAPainter extends IndicatorPainter<CandleEntity, MAStyle> {
-  late final Paint _linePaint;
+/// Shared implementation for multi-line main indicators (MA / EMA):
+/// one line per calc param over a per-entity value list.
+abstract class MultiLineIndicatorPainter extends IndicatorPainter {
+  final MAStyle style;
 
-  MAPainter(super.indicator) {
-    _linePaint = Paint()
-      ..isAntiAlias = true
-      ..filterQuality = FilterQuality.high
-      ..strokeWidth = indicatorStyle.lineWidth;
+  final Paint _linePaint = Paint()
+    ..isAntiAlias = true
+    ..filterQuality = FilterQuality.high;
+
+  MultiLineIndicatorPainter(super.indicator, {this.style = const MAStyle()}) {
+    _linePaint.strokeWidth = style.lineWidth;
   }
 
+  /// Label prefix, e.g. `MA` or `EMA`.
+  String get labelPrefix;
+
+  /// The indicator's value list for [entity].
+  List<double?>? valuesOf(KLineEntity entity);
+
   @override
-  TextSpan? drawFigure(
-    CandleEntity entity,
+  TextSpan? buildLabel(
+    KLineEntity entity,
     int precision,
     KChartColors chartColors,
   ) {
-    List<InlineSpan> result = [];
-    if (entity.maValueList?.isEmpty ?? true) return null;
-    for (int i = 0; i < (entity.maValueList!.length); i++) {
-      if (entity.maValueList?[i] != 0) {
-        var item = TextSpan(
+    final values = valuesOf(entity);
+    if (values == null || values.isEmpty) return null;
+    final spans = <InlineSpan>[];
+    for (var i = 0; i < values.length; i++) {
+      final value = values[i];
+      if (value == null) continue;
+      spans.add(
+        TextSpan(
           text:
-              "MA${indicator.calcParams[i]}:${formatNumber(entity.maValueList![i], precision)}  ",
-          style: TextStyle(fontSize: 10, color: indicatorStyle.getMAColor(i)),
-        );
-        result.add(item);
-      }
+              '$labelPrefix${indicator.calcParams[i]}:'
+              '${formatNumber(value, precision)}  ',
+          style: labelStyle(style.colorFor(i)),
+        ),
+      );
     }
-    return TextSpan(children: result);
+    return spans.isEmpty ? null : TextSpan(children: spans);
   }
 
   @override
   void drawChart(
-    CandleEntity lastPoint,
-    CandleEntity curPoint,
+    KLineEntity lastPoint,
+    KLineEntity curPoint,
     double lastX,
     double curX,
-    GetYFunction getY,
+    ValueY getY,
     Canvas canvas,
     KChartColors chartColors,
   ) {
-    if (curPoint.maValueList == null ||
-        lastPoint.maValueList == null ||
-        curPoint.maValueList!.length != lastPoint.maValueList!.length) {
+    final lastValues = valuesOf(lastPoint);
+    final curValues = valuesOf(curPoint);
+    if (lastValues == null ||
+        curValues == null ||
+        lastValues.length != curValues.length) {
       return;
     }
-    for (int i = 0; i < curPoint.maValueList!.length; i++) {
-      if (lastPoint.maValueList?[i] != 0) {
-        canvas.drawLine(
-          Offset(curX, getY(curPoint.maValueList![i])),
-          Offset(lastX, getY(lastPoint.maValueList![i])),
-          _linePaint..color = indicatorStyle.getMAColor(i),
-        );
-      }
+    for (var i = 0; i < curValues.length; i++) {
+      final lastValue = lastValues[i];
+      final curValue = curValues[i];
+      if (lastValue == null || curValue == null) continue;
+      canvas.drawLine(
+        Offset(lastX, getY(lastValue)),
+        Offset(curX, getY(curValue)),
+        _linePaint..color = style.colorFor(i),
+      );
     }
   }
+}
+
+/// Painter for [MAIndicator].
+class MAPainter extends MultiLineIndicatorPainter {
+  MAPainter(super.indicator, {super.style});
+
+  @override
+  String get labelPrefix => 'MA';
+
+  @override
+  List<double?>? valuesOf(KLineEntity entity) => entity.maValues;
 }

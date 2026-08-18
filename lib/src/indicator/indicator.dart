@@ -1,57 +1,51 @@
 import 'package:clean_k_chart/src/model/entity/k_line_entity.dart';
-import 'package:clean_k_chart/src/style/indicator_style.dart';
-import 'package:clean_k_chart/src/utils/number_util.dart';
 
 /// Pure calculation contract for chart indicators.
 ///
-/// Implementations must not depend on Flutter rendering — drawing logic
+/// Implementations must not depend on Flutter rendering — painting logic
 /// lives in the matching [IndicatorPainter] under render/indicator_view/.
-abstract class Indicator<T, K extends IndicatorStyle> {
+abstract class Indicator {
   final String name;
 
   final String shortName;
 
+  /// Calculation periods; meaning depends on the concrete indicator.
+  /// Copied into an unmodifiable list on construction.
   final List<int> calcParams;
-
-  final K indicatorStyle;
 
   Indicator({
     required this.name,
     required this.shortName,
-    required this.calcParams,
-    required this.indicatorStyle,
-  });
+    required List<int> calcParams,
+  }) : calcParams = List.unmodifiable(calcParams);
 
-  /// record.$1 : min value
-  /// record.$2: max value
-  (double, double) getMaxMinValue(KLineEntity entity, double minV, double maxV);
+  /// Extends the running (min, max) range with this indicator's value
+  /// on [entity]. Returns the updated record (min, max).
+  (double, double) getMaxMinValue(KLineEntity entity, double min, double max);
 
-  void calc(List<KLineEntity> dataList);
+  /// Computes this indicator over [data], writing results into the
+  /// entities' indicator value slots. Must tolerate an empty list.
+  void calc(List<KLineEntity> data);
 
-  String formatNumber(double value, int precision) {
-    return NumberUtil.format(value, precision) ?? '--';
-  }
+  @override
+  String toString() => shortName;
 }
 
 /// Indicator drawn over the main (candlestick) chart, e.g. MA, EMA, BOLL, SAR.
-abstract class MainIndicator<T, K extends IndicatorStyle>
-    extends Indicator<T, K> {
+abstract class MainIndicator extends Indicator {
   MainIndicator({
     required super.name,
     required super.shortName,
     required super.calcParams,
-    required super.indicatorStyle,
   });
 }
 
 /// Indicator drawn in its own panel below the main chart,
 /// e.g. MACD, KDJ, RSI, WR, CCI.
-abstract class SecondaryIndicator<T, K extends IndicatorStyle>
-    extends Indicator<T, K> {
+abstract class SecondaryIndicator extends Indicator {
   SecondaryIndicator({
     required super.name,
     required super.shortName,
     required super.calcParams,
-    required super.indicatorStyle,
   });
 }

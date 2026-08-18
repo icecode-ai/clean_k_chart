@@ -1,86 +1,77 @@
-import 'dart:math';
+import 'dart:math' as math;
 
-import 'package:clean_k_chart/src/model/entity/candle_entity.dart';
-import 'package:clean_k_chart/src/model/entity/k_line_entity.dart';
-import 'package:clean_k_chart/src/style/indicator_style.dart';
 import 'package:clean_k_chart/src/indicator/indicator.dart';
+import 'package:clean_k_chart/src/indicator/indicator_util.dart';
+import 'package:clean_k_chart/src/model/entity/k_line_entity.dart';
 
-class SARIndicator extends MainIndicator<CandleEntity, SARStyle> {
-  SARIndicator({super.indicatorStyle = const SARStyle()})
-    : super(
-        name: 'stopAndReverse',
-        shortName: 'SAR',
-        calcParams: const [2, 2, 20],
-      );
+/// Parabolic SAR (stop and reverse).
+///
+/// Params: `[afStart, afStep, afMax]` in percent (defaults to
+/// `[2, 2, 20]`, i.e. 0.02 / 0.02 / 0.2).
+class SARIndicator extends MainIndicator {
+  SARIndicator({super.calcParams = const [2, 2, 20]})
+    : assert(calcParams.length >= 3),
+      super(name: 'stopAndReverse', shortName: 'SAR');
 
   @override
-  (double, double) getMaxMinValue(
-    KLineEntity entity,
-    double minV,
-    double maxV,
-  ) {
-    if (entity.sar == null) return (minV, maxV);
-    return (min(entity.sar!, minV), max(entity.sar!, maxV));
+  (double, double) getMaxMinValue(KLineEntity entity, double min, double max) {
+    return extendRange(min, max, entity.sar);
   }
 
   @override
-  void calc(List<KLineEntity> dataList) {
+  void calc(List<KLineEntity> data) {
     final startAf = calcParams[0] / 100;
     final step = calcParams[1] / 100;
     final maxAf = calcParams[2] / 100;
 
-    // Acceleration factor
-    double af = startAf;
-    // Extreme point
-    double ep = -100;
-    // Determine trend direction — false: downtrend
-    bool isIncreasing = false;
-    double sar = 0;
+    // Acceleration factor.
+    var af = startAf;
+    // Extreme point of the current trend; null until first observed.
+    double? ep;
+    // false: downtrend, true: uptrend.
+    var isIncreasing = false;
+    var sar = 0.0;
 
-    for (int i = 0; i < dataList.length; ++i) {
-      // the previous period SAR
+    for (var i = 0; i < data.length; i++) {
       final preSar = sar;
-      final high = dataList[i].high;
-      final low = dataList[i].low;
+      final high = data[i].high;
+      final low = data[i].low;
 
       if (isIncreasing) {
-        // uptrend
-        if (ep == -100 || ep < high) {
-          // reinitialize parameters
+        if (ep == null || ep < high) {
           ep = high;
-          af = min(af + step, maxAf);
+          af = math.min(af + step, maxAf);
         }
         sar = preSar + af * (ep - preSar);
-        final lowMin = min(dataList[max(1, i) - 1].low, low);
-        if (sar > dataList[i].low) {
+        final lowMin = math.min(data[math.max(1, i) - 1].low, low);
+        if (sar > low) {
+          // Trend reversed to down.
           sar = ep;
-          // reinitialize parameters
           af = startAf;
-          ep = -100;
-          isIncreasing = !isIncreasing;
+          ep = null;
+          isIncreasing = false;
         } else if (sar > lowMin) {
           sar = lowMin;
         }
       } else {
-        if (ep == -100 || ep > low) {
-          // reinitialize parameters
+        if (ep == null || ep > low) {
           ep = low;
-          af = min(af + step, maxAf);
+          af = math.min(af + step, maxAf);
         }
         sar = preSar + af * (ep - preSar);
-        final highMax = max(dataList[max(1, i) - 1].high, high);
-        if (sar < dataList[i].high) {
+        final highMax = math.max(data[math.max(1, i) - 1].high, high);
+        if (sar < high) {
+          // Trend reversed to up.
           sar = ep;
-          // reinitialize parameters
-          af = 0;
-          ep = -100;
-          isIncreasing = !isIncreasing;
+          af = startAf;
+          ep = null;
+          isIncreasing = true;
         } else if (sar < highMax) {
           sar = highMax;
         }
       }
 
-      dataList[i].sar = sar;
+      data[i].sar = sar;
     }
   }
 }

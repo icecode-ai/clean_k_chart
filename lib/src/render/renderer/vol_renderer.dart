@@ -1,142 +1,99 @@
-import 'package:clean_k_chart/src/model/entity/volume_entity.dart';
-import 'package:clean_k_chart/src/utils/extension/num_ext.dart';
+import 'package:clean_k_chart/src/model/entity/k_line_entity.dart';
 import 'package:clean_k_chart/src/render/renderer/base_chart_renderer.dart';
-import 'package:clean_k_chart/src/style/k_chart_style.dart';
 import 'package:clean_k_chart/src/utils/number_util.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/painting.dart';
 
-class VolRenderer extends BaseChartRenderer<VolumeEntity> {
-  late double mVolWidth;
-  final KChartStyle chartStyle;
-  final KChartColors chartColors;
-
-  VolRenderer(
-    Rect mainRect,
-    double maxValue,
-    double minValue,
-    double topPadding,
-    int fixedLength,
-    this.chartStyle,
-    this.chartColors,
-  ) : super(
-        chartRect: mainRect,
-        maxValue: maxValue,
-        minValue: minValue,
-        topPadding: topPadding,
-        fixedLength: fixedLength,
-        gridColor: chartColors.gridColor,
-      ) {
-    mVolWidth = this.chartStyle.volWidth;
-  }
+/// Renders the volume panel with MA5/MA10 volume lines.
+class VolRenderer extends BaseChartRenderer {
+  VolRenderer({
+    required super.chartStyle,
+    required super.chartColors,
+    required super.topPadding,
+  });
 
   @override
   void drawChart(
-    VolumeEntity lastPoint,
-    VolumeEntity curPoint,
+    KLineEntity lastPoint,
+    KLineEntity curPoint,
     double lastX,
     double curX,
-    Size size,
-    Canvas canvas,
-  ) {
-    double r = mVolWidth / 2;
-    double top = getVolY(curPoint.vol);
-    double bottom = chartRect.bottom;
+    Canvas canvas, {
+    double scaleX = 1,
+  }) {
+    if (maxValue <= 0) return; // all-zero volume window
+    final r = chartStyle.volWidth / 2;
     if (curPoint.vol != 0) {
       canvas.drawRect(
-        Rect.fromLTRB(curX - r, top, curX + r, bottom),
+        Rect.fromLTRB(
+          curX - r,
+          getVolY(curPoint.vol),
+          curX + r,
+          chartRect.bottom,
+        ),
         chartPaint
           ..color = curPoint.close > curPoint.open
-              ? this.chartColors.volUpColor
-              : this.chartColors.volDnColor,
+              ? chartColors.volUpColor
+              : chartColors.volDnColor,
       );
     }
-
-    if (lastPoint.MA5Volume != 0) {
-      drawLine(
-        lastPoint.MA5Volume,
-        curPoint.MA5Volume,
-        canvas,
-        lastX,
-        curX,
-        this.chartColors.ma5Color,
-      );
-    }
-
-    if (lastPoint.MA10Volume != 0) {
-      drawLine(
-        lastPoint.MA10Volume,
-        curPoint.MA10Volume,
-        canvas,
-        lastX,
-        curX,
-        this.chartColors.ma10Color,
-      );
-    }
+    drawValueLine(
+      lastPoint.ma5Volume,
+      curPoint.ma5Volume,
+      canvas,
+      lastX,
+      curX,
+      chartPaint,
+      chartColors.ma5Color,
+    );
+    drawValueLine(
+      lastPoint.ma10Volume,
+      curPoint.ma10Volume,
+      canvas,
+      lastX,
+      curX,
+      chartPaint,
+      chartColors.ma10Color,
+    );
   }
 
+  /// Volume bars are anchored to the zero baseline rather than the
+  /// min/max range, so they keep their proportions.
   double getVolY(double value) =>
       (maxValue - value) * (chartRect.height / maxValue) + chartRect.top;
 
   @override
-  void drawText(Canvas canvas, VolumeEntity data, double x) {
-    TextSpan span = TextSpan(
-      children: [
-        TextSpan(
-          text: "VOL:${NumberUtil.formatCompact(data.vol)}   ",
-          style: getTextStyle(this.chartColors.volColor),
-        ),
-        if (data.MA5Volume.notNullOrZero)
-          TextSpan(
-            text: "MA5:${NumberUtil.formatCompact(data.MA5Volume!)}   ",
-            style: getTextStyle(this.chartColors.ma5Color),
-          ),
-        if (data.MA10Volume.notNullOrZero)
-          TextSpan(
-            text: "MA10:${NumberUtil.formatCompact(data.MA10Volume!)}   ",
-            style: getTextStyle(this.chartColors.ma10Color),
-          ),
-      ],
-    );
-    TextPainter tp = TextPainter(text: span, textDirection: TextDirection.ltr);
-    tp.layout();
-    tp.paint(
-      canvas,
-      Offset(x, chartRect.top - topPadding + chartStyle.indicatorTopMargin),
-    );
-  }
-
-  @override
-  void drawVerticalText(canvas, textStyle, int gridRows) {
-    TextSpan span = TextSpan(
-      text: "${NumberUtil.formatCompact(maxValue)}",
-      style: textStyle,
-    );
-    TextPainter tp = TextPainter(text: span, textDirection: TextDirection.ltr);
-    tp.layout();
-    tp.paint(
-      canvas,
-      Offset(
-        chartRect.width - tp.width - chartStyle.space,
-        chartRect.top - topPadding + chartStyle.indicatorTopMargin,
+  void drawHeaderLabels(Canvas canvas, KLineEntity data, double x) {
+    final spans = <InlineSpan>[
+      TextSpan(
+        text: 'VOL:${NumberUtil.formatCompact(data.vol)}   ',
+        style: getTextStyle(chartColors.volColor),
       ),
-    );
+      if (data.ma5Volume != null && data.ma5Volume != 0)
+        TextSpan(
+          text: 'MA5:${NumberUtil.formatCompact(data.ma5Volume!)}   ',
+          style: getTextStyle(chartColors.ma5Color),
+        ),
+      if (data.ma10Volume != null && data.ma10Volume != 0)
+        TextSpan(
+          text: 'MA10:${NumberUtil.formatCompact(data.ma10Volume!)}   ',
+          style: getTextStyle(chartColors.ma10Color),
+        ),
+    ];
+    drawHeaderText(canvas, TextSpan(children: spans), Offset(x, headerY));
   }
 
   @override
-  void drawGrid(Canvas canvas, int gridRows, int gridColumns) {
-    canvas.drawLine(
-      Offset(0, chartRect.bottom),
-      Offset(chartRect.width, chartRect.bottom),
-      gridPaint,
+  void drawVerticalText(Canvas canvas, TextStyle textStyle) {
+    final text = NumberUtil.formatCompact(maxValue);
+    labelPainter
+      ..text = TextSpan(text: text, style: textStyle)
+      ..layout();
+    labelPainter.paint(
+      canvas,
+      Offset(chartRect.width - labelPainter.width - chartStyle.space, headerY),
     );
-    double columnSpace = chartRect.width / gridColumns;
-    for (int i = 0; i <= columnSpace; i++) {
-      //vol垂直线
-      canvas.drawLine(
-        Offset(columnSpace * i, chartRect.top - topPadding),
-        Offset(columnSpace * i, chartRect.bottom),
-        gridPaint,
-      );
-    }
   }
+
+  TextStyle getTextStyle(Color color) =>
+      TextStyle(fontSize: 10.0, color: color);
 }

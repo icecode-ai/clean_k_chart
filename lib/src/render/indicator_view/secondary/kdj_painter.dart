@@ -1,45 +1,48 @@
-import 'package:clean_k_chart/src/style/indicator_style.dart';
-import 'package:clean_k_chart/src/model/entity/macd_entity.dart';
+import 'package:clean_k_chart/src/model/entity/k_line_entity.dart';
 import 'package:clean_k_chart/src/render/indicator_view/indicator_painter.dart';
+import 'package:clean_k_chart/src/style/indicator_style.dart';
 import 'package:clean_k_chart/src/style/k_chart_style.dart' show KChartColors;
 import 'package:flutter/painting.dart';
 
-class KDJPainter extends SecondaryIndicatorPainter<MACDEntity, KDJStyle> {
-  late final Paint _linePaint;
+/// Painter for [KDJIndicator]: K/D/J lines with 80/20 reference levels.
+class KDJPainter extends SecondaryIndicatorPainter {
+  final KDJStyle style;
 
-  KDJPainter(super.indicator) {
-    _linePaint = Paint()
-      ..isAntiAlias = true
-      ..filterQuality = FilterQuality.high
-      ..strokeWidth = indicatorStyle.lineWidth;
+  final Paint _linePaint = Paint()
+    ..isAntiAlias = true
+    ..filterQuality = FilterQuality.high;
+
+  KDJPainter(super.indicator, {KDJStyle style = const KDJStyle()})
+    : style = style {
+    _linePaint.strokeWidth = style.lineWidth;
   }
 
   @override
-  TextSpan? drawFigure(
-    MACDEntity entity,
+  TextSpan? buildLabel(
+    KLineEntity entity,
     int precision,
     KChartColors chartColors,
   ) {
     return TextSpan(
       children: [
         TextSpan(
-          text: "KDJ(9,1,3) ",
-          style: getTextStyle(chartColors.defaultTextColor),
+          text: 'KDJ(${indicator.calcParams.join(',')}) ',
+          style: labelStyle(chartColors.defaultTextColor),
         ),
         if (entity.k != null && entity.k != 0)
           TextSpan(
-            text: "K:${formatNumber(entity.k!, precision)}  ",
-            style: getTextStyle(indicatorStyle.kColor),
+            text: 'K:${formatNumber(entity.k!, precision)}  ',
+            style: labelStyle(style.kColor),
           ),
         if (entity.d != null && entity.d != 0)
           TextSpan(
-            text: "D:${formatNumber(entity.d!, precision)}  ",
-            style: getTextStyle(indicatorStyle.dColor),
+            text: 'D:${formatNumber(entity.d!, precision)}  ',
+            style: labelStyle(style.dColor),
           ),
         if (entity.j != null && entity.j != 0)
           TextSpan(
-            text: "J:${formatNumber(entity.j!, precision)}",
-            style: getTextStyle(indicatorStyle.jColor),
+            text: 'J:${formatNumber(entity.j!, precision)}',
+            style: labelStyle(style.jColor),
           ),
       ],
     );
@@ -54,56 +57,58 @@ class KDJPainter extends SecondaryIndicatorPainter<MACDEntity, KDJStyle> {
     required int fixedLength,
     required Rect chartRect,
   }) {
-    List<int> rangeValue = [80, 20];
+    const levels = [80, 20];
     final spaceRange = maxValue - minValue;
-
-    for (int i = 0; i < rangeValue.length; ++i) {
-      final value = rangeValue[i];
+    for (final value in levels) {
       if (value < minValue || value > maxValue) continue;
-      TextPainter tp = TextPainter(
-        text: TextSpan(text: value.toString(), style: style),
-        textDirection: TextDirection.ltr,
-      );
-      tp.layout();
+      textPainter
+        ..text = TextSpan(text: value.toString(), style: style)
+        ..layout();
       final ratio = (value - minValue) / spaceRange;
-      final x = chartRect.width - tp.width;
-      final y = chartRect.bottom - ratio * chartRect.height - tp.height / 2;
-      tp.paint(
+      final x = chartRect.width - textPainter.width;
+      final y =
+          chartRect.bottom - ratio * chartRect.height - textPainter.height / 2;
+      textPainter.paint(
         canvas,
-        Offset(x, y.clamp(chartRect.top, chartRect.bottom - tp.height)),
+        Offset(
+          x,
+          y.clamp(chartRect.top, chartRect.bottom - textPainter.height),
+        ),
       );
     }
   }
 
   @override
   void drawChart(
-    MACDEntity lastPoint,
-    MACDEntity curPoint,
+    KLineEntity lastPoint,
+    KLineEntity curPoint,
     double lastX,
     double curX,
-    GetYFunction getY,
+    ValueY getY,
     Canvas canvas,
     KChartColors chartColors,
   ) {
-    if (curPoint.k != null || lastPoint.k != null) {
+    // Both endpoints must be present — the old `||` check crashed when
+    // exactly one side was still in warm-up.
+    if (lastPoint.k != null && curPoint.k != null) {
       canvas.drawLine(
         Offset(curX, getY(curPoint.k!)),
         Offset(lastX, getY(lastPoint.k!)),
-        _linePaint..color = indicatorStyle.kColor,
+        _linePaint..color = style.kColor,
       );
     }
-    if (curPoint.d != null || lastPoint.d != null) {
+    if (lastPoint.d != null && curPoint.d != null) {
       canvas.drawLine(
         Offset(curX, getY(curPoint.d!)),
         Offset(lastX, getY(lastPoint.d!)),
-        _linePaint..color = indicatorStyle.dColor,
+        _linePaint..color = style.dColor,
       );
     }
-    if (curPoint.j != null || lastPoint.j != null) {
+    if (lastPoint.j != null && curPoint.j != null) {
       canvas.drawLine(
         Offset(curX, getY(curPoint.j!)),
         Offset(lastX, getY(lastPoint.j!)),
-        _linePaint..color = indicatorStyle.jColor,
+        _linePaint..color = style.jColor,
       );
     }
   }

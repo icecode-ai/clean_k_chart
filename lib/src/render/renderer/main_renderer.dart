@@ -1,133 +1,149 @@
-import 'package:clean_k_chart/src/model/entity/candle_entity.dart';
-import 'package:clean_k_chart/src/indicator/indicator.dart';
+import 'package:clean_k_chart/src/model/entity/k_line_entity.dart';
 import 'package:clean_k_chart/src/render/indicator_view/indicator_painter.dart';
-import 'package:clean_k_chart/src/render/indicator_view/indicator_painter_factory.dart';
 import 'package:clean_k_chart/src/render/renderer/base_chart_renderer.dart';
 import 'package:clean_k_chart/src/style/k_chart_style.dart';
-import 'package:clean_k_chart/src/utils/number_util.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/painting.dart';
 
-enum VerticalTextAlignment { left, right }
+/// Renders the main candlestick / line panel plus its main-indicator
+/// overlays.
+class MainRenderer extends BaseChartRenderer {
+  final List<IndicatorPainter> indicatorPainters;
+  final bool isLine;
+  VerticalTextAlignment verticalTextAlignment;
 
-//For TrendLine
-double? trendLineMax;
-double? trendLineScale;
-double? trendLineContentRec;
+  static const double _contentPadding = 5.0;
+  static const double _lineStrokeWidth = 1.0;
 
-class MainRenderer extends BaseChartRenderer<CandleEntity> {
-  late double mCandleWidth;
-  late double mCandleLineWidth;
-  List<MainIndicator> indicatorLi;
-  late final List<IndicatorPainter> indicatorPainters;
-  bool isLine;
+  Rect _contentRect = Rect.zero;
 
-  //绘制的内容区域
-  late Rect _contentRect;
-  double _contentPadding = 5.0;
-  final KChartStyle chartStyle;
-  final KChartColors chartColors;
-  final double mLineStrokeWidth = 1.0;
-  double scaleX;
-  late Paint mLinePaint;
-  final VerticalTextAlignment verticalTextAlignment;
-  final double mBottomPadding;
+  final Paint _linePaint = Paint()
+    ..isAntiAlias = true
+    ..style = PaintingStyle.stroke;
+  final Paint _lineFillPaint = Paint()
+    ..isAntiAlias = true
+    ..style = PaintingStyle.fill;
+  final Path _linePath = Path();
+  final Path _lineFillPath = Path();
+  Shader? _lineFillShader;
+  Rect _shaderRect = Rect.zero;
 
-  MainRenderer(
-    Rect mainRect,
-    double maxValue,
-    double minValue,
-    double topPadding,
-    this.indicatorLi,
-    this.isLine,
-    int fixedLength,
-    this.chartStyle,
-    this.chartColors,
-    this.scaleX,
-    this.verticalTextAlignment,
-    this.mBottomPadding,
-  ) : super(
-        chartRect: mainRect,
-        maxValue: maxValue,
-        minValue: minValue,
-        topPadding: topPadding,
-        fixedLength: fixedLength,
-        gridColor: chartColors.gridColor,
-      ) {
-    mCandleWidth = this.chartStyle.candleWidth;
-    mCandleLineWidth = this.chartStyle.candleLineWidth;
-    indicatorPainters = indicatorLi
-        .map(IndicatorPainterFactory.create)
-        .toList();
-    mLinePaint = Paint()
-      ..isAntiAlias = true
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = mLineStrokeWidth
-      ..color = this.chartColors.kLineColor;
-    _contentRect = Rect.fromLTRB(
-      chartRect.left,
-      chartRect.top + _contentPadding,
-      chartRect.right,
-      chartRect.bottom - _contentPadding,
+  MainRenderer({
+    required super.chartStyle,
+    required super.chartColors,
+    required super.topPadding,
+    required this.indicatorPainters,
+    required this.isLine,
+    required this.verticalTextAlignment,
+  }) {
+    _linePaint
+      ..strokeWidth = _lineStrokeWidth
+      ..color = chartColors.kLineColor;
+  }
+
+  @override
+  void update({
+    required Rect rect,
+    required double maxValue,
+    required double minValue,
+    required int fixedLength,
+  }) {
+    super.update(
+      rect: rect,
+      maxValue: maxValue,
+      minValue: minValue,
+      fixedLength: fixedLength,
     );
-    if (maxValue == minValue) {
-      maxValue *= 1.5;
-      minValue /= 2;
-    }
+    _contentRect = Rect.fromLTRB(
+      rect.left,
+      rect.top + _contentPadding,
+      rect.right,
+      rect.bottom - _contentPadding,
+    );
     scaleY = _contentRect.height / (maxValue - minValue);
   }
 
   @override
-  void drawText(Canvas canvas, CandleEntity data, double x) {
-    if (isLine == true) return;
-    double y = chartStyle.indicatorTopMargin;
-    for (int i = 0; i < indicatorPainters.length; ++i) {
-      TextSpan? span = indicatorPainters[i].drawFigure(
-        data,
-        fixedLength,
-        chartColors,
+  double getY(double value) => (maxValue - value) * scaleY + _contentRect.top;
+
+  /// Inverse of [getY]: the value displayed at screen y [dy].
+  /// Used to capture trend line anchor points at a price.
+  double valueFromY(double dy) => maxValue - (dy - _contentRect.top) / scaleY;
+
+  @override
+  void drawGrid(Canvas canvas) {
+    super.drawGrid(canvas);
+    final rows = chartStyle.gridRows;
+    final rowSpace = chartRect.height / rows;
+    for (var i = 1; i < rows; i++) {
+      final y = chartRect.top + rowSpace * i;
+      canvas.drawLine(
+        Offset(chartRect.left, y),
+        Offset(chartRect.right, y),
+        gridPaint,
       );
-      if (span == null) return;
-      TextPainter tp = TextPainter(
-        text: span,
-        textDirection: TextDirection.ltr,
+    }
+  }
+
+  @override
+  void drawHeaderLabels(Canvas canvas, KLineEntity data, double x) {
+    if (isLine) return;
+    var y = chartStyle.indicatorTopMargin;
+    for (final painter in indicatorPainters) {
+      final span = painter.buildLabel(data, fixedLength, chartColors);
+      if (span == null) continue;
+      final height = drawHeaderText(
+        canvas,
+        span,
+        Offset(x, y),
+        withBackground: true,
       );
-      tp.layout(minWidth: 0, maxWidth: chartRect.width - chartStyle.space);
+      y += height + 2.0;
+    }
+  }
 
-      Offset offset = Offset(x, y);
-
-      canvas.drawRect(
-        Rect.fromLTRB(
-          offset.dx - 2,
-          offset.dy - 2,
-          tp.width + offset.dx + 2,
-          tp.height + offset.dy + 2,
-        ),
-        Paint()..color = this.chartColors.bgColor.withAlpha(80),
-      );
-
-      tp.paint(canvas, offset);
-
-      y = y + tp.height + 2.0; // update y
+  @override
+  void drawVerticalText(Canvas canvas, TextStyle textStyle) {
+    final rows = chartStyle.gridRows;
+    final rowSpace = chartRect.height / rows;
+    for (var i = 0; i <= rows; i++) {
+      final value = (rows - i) * rowSpace / scaleY + minValue;
+      labelPainter
+        ..text = TextSpan(text: formatAxisValue(value), style: textStyle)
+        ..layout();
+      final offsetX = switch (verticalTextAlignment) {
+        VerticalTextAlignment.left => chartStyle.space,
+        VerticalTextAlignment.right =>
+          chartRect.width - labelPainter.width - chartStyle.space,
+      };
+      final y = i == 0
+          ? topPadding
+          : rowSpace * i - labelPainter.height + topPadding;
+      labelPainter.paint(canvas, Offset(offsetX, y));
     }
   }
 
   @override
   void drawChart(
-    CandleEntity lastPoint,
-    CandleEntity curPoint,
+    KLineEntity lastPoint,
+    KLineEntity curPoint,
     double lastX,
     double curX,
-    Size size,
-    Canvas canvas,
-  ) {
+    Canvas canvas, {
+    double scaleX = 1,
+  }) {
     if (isLine) {
-      drawPolyline(lastPoint.close, curPoint.close, canvas, lastX, curX);
+      _drawPolyline(
+        lastPoint.close,
+        curPoint.close,
+        canvas,
+        lastX,
+        curX,
+        scaleX,
+      );
     } else {
-      drawCandle(curPoint, canvas, curX);
-
-      /// draw chart main state
-      for (int i = 0; i < indicatorPainters.length; ++i) {
-        indicatorPainters[i].drawChart(
+      _drawCandle(curPoint, canvas, curX);
+      for (final painter in indicatorPainters) {
+        painter.drawChart(
           lastPoint,
           curPoint,
           lastX,
@@ -140,33 +156,17 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
     }
   }
 
-  Shader? mLineFillShader;
-  Path? mLinePath, mLineFillPath;
-  Paint mLineFillPaint = Paint()
-    ..style = PaintingStyle.fill
-    ..isAntiAlias = true;
-
-  //画折线图
-  drawPolyline(
+  void _drawPolyline(
     double lastPrice,
     double curPrice,
     Canvas canvas,
     double lastX,
     double curX,
+    double scaleX,
   ) {
-    //    drawLine(lastPrice + 100, curPrice + 100, canvas, lastX, curX, ChartColors.kLineColor);
-    mLinePath ??= Path();
-
-    //    if (lastX == curX) {
-    //      mLinePath.moveTo(lastX, getY(lastPrice));
-    //    } else {
-    ////      mLinePath.lineTo(curX, getY(curPrice));
-    //      mLinePath.cubicTo(
-    //          (lastX + curX) / 2, getY(lastPrice), (lastX + curX) / 2, getY(curPrice), curX, getY(curPrice));
-    //    }
-    if (lastX == curX) lastX = 0; //起点位置填充
-    mLinePath!.moveTo(lastX, getY(lastPrice));
-    mLinePath!.cubicTo(
+    if (lastX == curX) lastX = 0; // fill from the left edge at the start
+    _linePath.moveTo(lastX, getY(lastPrice));
+    _linePath.cubicTo(
       (lastX + curX) / 2,
       getY(lastPrice),
       (lastX + curX) / 2,
@@ -175,28 +175,19 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
       getY(curPrice),
     );
 
-    //画阴影
-    mLineFillShader ??=
-        LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          tileMode: TileMode.clamp,
-          colors: this.chartColors.kLineFillColors,
-        ).createShader(
-          Rect.fromLTRB(
-            chartRect.left,
-            chartRect.top,
-            chartRect.right,
-            chartRect.bottom,
-          ),
-        );
-    mLineFillPaint..shader = mLineFillShader;
+    if (_lineFillShader == null || _shaderRect != chartRect) {
+      _lineFillShader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: chartColors.kLineFillColors,
+      ).createShader(chartRect);
+      _shaderRect = chartRect;
+      _lineFillPaint.shader = _lineFillShader;
+    }
 
-    mLineFillPath ??= Path();
-
-    mLineFillPath!.moveTo(lastX, chartRect.height + chartRect.top);
-    mLineFillPath!.lineTo(lastX, getY(lastPrice));
-    mLineFillPath!.cubicTo(
+    _lineFillPath.moveTo(lastX, chartRect.bottom);
+    _lineFillPath.lineTo(lastX, getY(lastPrice));
+    _lineFillPath.cubicTo(
       (lastX + curX) / 2,
       getY(lastPrice),
       (lastX + curX) / 2,
@@ -204,134 +195,41 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
       curX,
       getY(curPrice),
     );
-    mLineFillPath!.lineTo(curX, chartRect.height + chartRect.top);
-    mLineFillPath!.close();
+    _lineFillPath.lineTo(curX, chartRect.bottom);
+    _lineFillPath.close();
 
-    canvas.drawPath(mLineFillPath!, mLineFillPaint);
-    mLineFillPath!.reset();
+    canvas.drawPath(_lineFillPath, _lineFillPaint);
+    _lineFillPath.reset();
 
     canvas.drawPath(
-      mLinePath!,
-      mLinePaint..strokeWidth = (mLineStrokeWidth / scaleX).clamp(0.1, 1.0),
+      _linePath,
+      _linePaint..strokeWidth = (_lineStrokeWidth / scaleX).clamp(0.1, 1.0),
     );
-    mLinePath!.reset();
+    _linePath.reset();
   }
 
-  void drawCandle(CandleEntity curPoint, Canvas canvas, double curX) {
-    var high = getY(curPoint.high);
-    var low = getY(curPoint.low);
+  void _drawCandle(KLineEntity curPoint, Canvas canvas, double curX) {
+    final high = getY(curPoint.high);
+    final low = getY(curPoint.low);
     var open = getY(curPoint.open);
     var close = getY(curPoint.close);
-    double r = mCandleWidth / 2;
-    double lineR = mCandleLineWidth / 2;
+    final r = chartStyle.candleWidth / 2;
+    final lineR = chartStyle.candleLineWidth / 2;
     if (open >= close) {
-      // 实体高度>= CandleLineWidth
-      if (open - close < mCandleLineWidth) {
-        open = close + mCandleLineWidth;
+      if (open - close < chartStyle.candleLineWidth) {
+        open = close + chartStyle.candleLineWidth;
       }
-      chartPaint.color = this.chartColors.upColor;
-      canvas.drawRect(
-        Rect.fromLTRB(curX - r, close, curX + r, open),
-        chartPaint,
-      );
-      canvas.drawRect(
-        Rect.fromLTRB(curX - lineR, high, curX + lineR, low),
-        chartPaint,
-      );
-    } else if (close > open) {
-      // 实体高度>= CandleLineWidth
-      if (close - open < mCandleLineWidth) {
-        open = close - mCandleLineWidth;
+      chartPaint.color = chartColors.upColor;
+    } else {
+      if (close - open < chartStyle.candleLineWidth) {
+        open = close - chartStyle.candleLineWidth;
       }
-      chartPaint.color = this.chartColors.dnColor;
-      canvas.drawRect(
-        Rect.fromLTRB(curX - r, open, curX + r, close),
-        chartPaint,
-      );
-      canvas.drawRect(
-        Rect.fromLTRB(curX - lineR, high, curX + lineR, low),
-        chartPaint,
-      );
+      chartPaint.color = chartColors.dnColor;
     }
-  }
-
-  @override
-  void drawVerticalText(canvas, textStyle, int gridRows) {
-    double rowSpace = chartRect.height / gridRows;
-    for (var i = 0; i <= gridRows; ++i) {
-      double value = (gridRows - i) * rowSpace / scaleY + minValue;
-      TextSpan span = TextSpan(
-        text: "${NumberUtil.formatFixed(value, fixedLength) ?? ''}",
-        style: textStyle,
-      );
-      TextPainter tp = TextPainter(
-        text: span,
-        textDirection: TextDirection.ltr,
-      );
-      tp.layout();
-
-      double offsetX;
-      switch (verticalTextAlignment) {
-        case VerticalTextAlignment.left:
-          offsetX = this.chartStyle.space;
-          break;
-        case VerticalTextAlignment.right:
-          offsetX = chartRect.width - tp.width - this.chartStyle.space;
-          break;
-      }
-
-      if (i == 0) {
-        tp.paint(canvas, Offset(offsetX, topPadding));
-      } else {
-        tp.paint(
-          canvas,
-          Offset(offsetX, rowSpace * i - tp.height + topPadding),
-        );
-      }
-    }
-  }
-
-  @override
-  void drawGrid(Canvas canvas, int gridRows, int gridColumns) {
-    //    final int gridRows = 4, gridColumns = 4;
-    double rowSpace = chartRect.height / gridRows;
-    for (int i = 0; i <= gridRows; i++) {
-      canvas.drawLine(
-        Offset(0, rowSpace * i + topPadding),
-        Offset(chartRect.width, rowSpace * i + topPadding),
-        gridPaint,
-      );
-    }
-    double columnSpace = chartRect.width / gridColumns;
-    for (int i = 0; i <= columnSpace; i++) {
-      canvas.drawLine(
-        Offset(columnSpace * i, 0),
-        Offset(columnSpace * i, chartRect.bottom),
-        gridPaint,
-      );
-    }
-
-    /// draw top grid
-    canvas.drawLine(Offset(0, 0), Offset(chartRect.width, 0), gridPaint..color);
-
-    /// draw bottom grid
-    canvas.drawLine(
-      Offset(0, chartRect.bottom + mBottomPadding),
-      Offset(chartRect.width, chartRect.bottom + mBottomPadding),
-      gridPaint..color,
+    canvas.drawRect(Rect.fromLTRB(curX - r, close, curX + r, open), chartPaint);
+    canvas.drawRect(
+      Rect.fromLTRB(curX - lineR, high, curX + lineR, low),
+      chartPaint,
     );
-  }
-
-  @override
-  double getY(double y) {
-    //For TrendLine
-    updateTrendLineData();
-    return (maxValue - y) * scaleY + _contentRect.top;
-  }
-
-  void updateTrendLineData() {
-    trendLineMax = maxValue;
-    trendLineScale = scaleY;
-    trendLineContentRec = _contentRect.top;
   }
 }

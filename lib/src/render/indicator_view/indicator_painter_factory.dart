@@ -18,46 +18,64 @@ import 'package:clean_k_chart/src/render/indicator_view/secondary/kdj_painter.da
 import 'package:clean_k_chart/src/render/indicator_view/secondary/macd_painter.dart';
 import 'package:clean_k_chart/src/render/indicator_view/secondary/rsi_painter.dart';
 import 'package:clean_k_chart/src/render/indicator_view/secondary/wr_painter.dart';
+import 'package:clean_k_chart/src/style/indicator_style.dart';
 
 typedef IndicatorPainterBuilder = IndicatorPainter Function(
   Indicator indicator,
+  IndicatorStyles styles,
 );
 
-/// Maps indicator instances to their renderers.
+/// Maps indicator instances to their painters.
 ///
-/// Built-in indicators are registered by type. Custom indicators can hook
-/// in their painter via [register].
+/// Built-in indicators are registered by type. Custom indicators hook in
+/// their painter via [register].
 class IndicatorPainterFactory {
   IndicatorPainterFactory._();
 
   static final Map<Type, IndicatorPainterBuilder> _builders = {
-    MAIndicator: (i) => MAPainter(i as MAIndicator),
-    EMAIndicator: (i) => EMAPainter(i as EMAIndicator),
-    BOLLIndicator: (i) => BOLLPainter(i as BOLLIndicator),
-    SARIndicator: (i) => SARPainter(i as SARIndicator),
-    MACDIndicator: (i) => MACDPainter(i as MACDIndicator),
-    KDJIndicator: (i) => KDJPainter(i as KDJIndicator),
-    RSIIndicator: (i) => RSIPainter(i as RSIIndicator),
-    WRIndicator: (i) => WRPainter(i as WRIndicator),
-    CCIIndicator: (i) => CCIPainter(i as CCIIndicator),
+    MAIndicator: (i, s) => MAPainter(i as MAIndicator, style: s.ma),
+    EMAIndicator: (i, s) => EMAPainter(i as EMAIndicator, style: s.ema),
+    BOLLIndicator: (i, s) => BOLLPainter(i as BOLLIndicator, style: s.boll),
+    SARIndicator: (i, s) => SARPainter(i as SARIndicator, style: s.sar),
+    MACDIndicator: (i, s) => MACDPainter(i as MACDIndicator, style: s.macd),
+    KDJIndicator: (i, s) => KDJPainter(i as KDJIndicator, style: s.kdj),
+    RSIIndicator: (i, s) => RSIPainter(i as RSIIndicator, style: s.rsi),
+    WRIndicator: (i, s) => WRPainter(i as WRIndicator, style: s.wr),
+    CCIIndicator: (i, s) => CCIPainter(i as CCIIndicator, style: s.cci),
   };
 
   /// Registers a painter for a custom indicator type (exact type match).
   static void register<T extends Indicator>(
-    IndicatorPainter Function(T indicator) builder,
+    IndicatorPainter Function(T indicator, IndicatorStyles styles) builder,
   ) {
-    _builders[T] = (indicator) => builder(indicator as T);
+    _builders[T] = (indicator, styles) => builder(indicator as T, styles);
   }
 
-  static IndicatorPainter create(Indicator indicator) {
+  /// Creates the painter for [indicator], styled from [styles].
+  /// Throws [ArgumentError] when no painter is registered for the type.
+  static IndicatorPainter create(Indicator indicator, IndicatorStyles styles) {
     final builder = _builders[indicator.runtimeType];
     if (builder == null) {
       throw ArgumentError(
-        'No IndicatorPainter registered for '
-        '"${indicator.runtimeType}". Register one via '
-        'IndicatorPainterFactory.register.',
+        'No IndicatorPainter registered for "${indicator.runtimeType}". '
+        'Register one via IndicatorPainterFactory.register.',
       );
     }
-    return builder(indicator);
+    return builder(indicator, styles);
+  }
+
+  /// Like [create] but asserts the painter is usable in a secondary panel.
+  static SecondaryIndicatorPainter createSecondary(
+    SecondaryIndicator indicator,
+    IndicatorStyles styles,
+  ) {
+    final painter = create(indicator, styles);
+    if (painter is SecondaryIndicatorPainter) {
+      return painter;
+    }
+    throw ArgumentError(
+      'Painter for "${indicator.shortName}" must extend '
+      'SecondaryIndicatorPainter.',
+    );
   }
 }

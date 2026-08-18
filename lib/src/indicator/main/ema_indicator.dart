@@ -1,55 +1,38 @@
-import 'dart:math';
-
-import 'package:clean_k_chart/src/model/entity/candle_entity.dart';
-import 'package:clean_k_chart/src/model/entity/k_line_entity.dart';
-import 'package:clean_k_chart/src/style/indicator_style.dart';
 import 'package:clean_k_chart/src/indicator/indicator.dart';
+import 'package:clean_k_chart/src/indicator/indicator_util.dart';
+import 'package:clean_k_chart/src/model/entity/k_line_entity.dart';
 
-class EMAIndicator extends MainIndicator<CandleEntity, MAStyle> {
-  EMAIndicator({
-    super.calcParams = const [5, 10, 30, 60],
-    super.indicatorStyle = const MAStyle(),
-  }) : super(name: 'exponentialMovingAverage', shortName: 'EMA');
+/// Exponential moving average over the close price, one line per period.
+///
+/// Formula: `EMA = (close − previous EMA) · 2 / (period + 1) + previous EMA`,
+/// seeded with the first close price.
+class EMAIndicator extends MainIndicator {
+  EMAIndicator({super.calcParams = const [5, 10, 30, 60]})
+    : assert(calcParams.isNotEmpty),
+      super(name: 'exponentialMovingAverage', shortName: 'EMA');
 
   @override
-  (double, double) getMaxMinValue(
-    KLineEntity entity,
-    double minV,
-    double maxV,
-  ) {
-    if (entity.emaValueList?.isEmpty ?? true) return (minV, maxV);
-    double minValue = minV;
-    double maxValue = maxV;
-    for (double value in entity.emaValueList!) {
-      if (value == 0) continue;
-      minValue = min(value, minValue);
-      maxValue = max(value, maxValue);
-    }
-    return (minValue, maxValue);
+  (double, double) getMaxMinValue(KLineEntity entity, double min, double max) {
+    return extendRangeAll(min, max, entity.emaValues);
   }
 
   @override
-  void calc(List<KLineEntity> dataList) {
-    /// Formula:
-    ///   Multiplier = 2 / (period + 1)
-    ///   EMA = (Closing Price - Previous EMA) * Multiplier + Previous EMA
-    List<double> emaValues = List<double>.filled(calcParams.length, 0);
-    for (int i = 0; i < dataList.length; i++) {
-      KLineEntity entity = dataList[i];
-      List<double> ema = List<double>.filled(calcParams.length, 0);
-      for (int j = 0; j < calcParams.length; ++j) {
-        final p = calcParams[j];
-        double multiplier = 2 / (p + 1);
+  void calc(List<KLineEntity> data) {
+    final smoothed = List<double>.filled(calcParams.length, 0);
+    for (var i = 0; i < data.length; i++) {
+      final entity = data[i];
+      final values = List<double>.filled(calcParams.length, 0);
+      for (var j = 0; j < calcParams.length; j++) {
+        final period = calcParams[j];
+        if (period <= 0) continue;
         if (i == 0) {
-          emaValues[j] = entity.close;
+          smoothed[j] = entity.close;
         } else {
-          emaValues[j] =
-              (entity.close - emaValues[j]) * multiplier + emaValues[j];
+          smoothed[j] = emaSmooth(entity.close, smoothed[j], period);
         }
-        ema[j] = emaValues[j];
+        values[j] = smoothed[j];
       }
-
-      entity.emaValueList = ema;
+      entity.emaValues = values;
     }
   }
 }

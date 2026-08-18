@@ -1,6 +1,6 @@
 name: clean_k_chart
-description: "A new Flutter project."
-version: 0.0.1
+description: "A clean, layered Flutter K-line (candlestick) chart package with MA/EMA/BOLL/SAR/MACD/KDJ/RSI/WR/CCI indicators and a depth chart."
+version: 0.1.0
 homepage: https://github.com/icecode-ai/clean_k_chart
 
 environment:

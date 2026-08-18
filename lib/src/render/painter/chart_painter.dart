@@ -1,630 +1,653 @@
-import 'dart:async' show StreamSink;
-
-import 'package:clean_k_chart/src/model/entity/info_window_entity.dart';
+import 'package:clean_k_chart/src/indicator/indicator.dart';
 import 'package:clean_k_chart/src/model/entity/k_line_entity.dart';
-import 'package:clean_k_chart/src/utils/extension/canvas_extension.dart';
-import 'package:clean_k_chart/src/render/painter/base_chart_painter.dart';
-import 'package:clean_k_chart/src/render/renderer/base_chart_renderer.dart';
-import 'package:clean_k_chart/src/render/dimension.dart';
+import 'package:clean_k_chart/src/model/entity/trend_line.dart';
+import 'package:clean_k_chart/src/render/chart_dimension.dart';
+import 'package:clean_k_chart/src/render/chart_viewport.dart';
+import 'package:clean_k_chart/src/render/dash_line.dart';
+import 'package:clean_k_chart/src/render/renderer_cache.dart';
 import 'package:clean_k_chart/src/render/renderer/main_renderer.dart';
-import 'package:clean_k_chart/src/render/renderer/secondary_renderer.dart';
-import 'package:clean_k_chart/src/render/renderer/vol_renderer.dart';
+import 'package:clean_k_chart/src/render/text_painter_cache.dart';
+import 'package:clean_k_chart/src/style/indicator_style.dart';
 import 'package:clean_k_chart/src/style/k_chart_style.dart';
-import 'package:clean_k_chart/src/utils/date_format_util.dart';
+import 'package:clean_k_chart/src/utils/date_format.dart';
 import 'package:clean_k_chart/src/utils/number_util.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/painting.dart';
+import 'package:flutter/rendering.dart' show CustomPainter;
 
-class TrendLine {
-  final Offset p1;
-  final Offset p2;
-  final double maxHeight;
-  final double scale;
-
-  TrendLine(this.p1, this.p2, this.maxHeight, this.scale);
-}
-
-double? trendLineX;
-
-double getTrendLineX() {
-  return trendLineX ?? 0;
-}
-
-class ChartPainter extends BaseChartPainter {
-  final List<TrendLine> lines; //For TrendLine
-  final bool isTrendLine; //For TrendLine
-  final double selectY; //For TrendLine
-  static get maxScrollX => BaseChartPainter.maxScrollX;
-  late BaseChartRenderer mMainRenderer;
-  BaseChartRenderer? mVolRenderer;
-  Set<BaseChartRenderer> mSecondaryRendererList = {};
-  StreamSink<InfoWindowEntity?> sink;
-  int fixedLength;
-  final KChartColors chartColors;
-  late Paint paintCross, selectPointPaint, selectorBorderPaint;
-  late Paint nowPriceSelectorPaint,
-      nowPriceSelectorBorderPaint,
-      nowPriceLinePaint;
+/// Orchestrating CustomPainter for the K-line chart.
+///
+/// Owns no persistent render state — renderers, indicator painters and
+/// label caches live in [ChartRendererCache] held by the widget; this
+/// painter re-targets them each frame and draws the overlays
+/// (crosshair, max/min markers, current price line, trend lines).
+class ChartPainter extends CustomPainter {
   final KChartStyle chartStyle;
+  final KChartColors chartColors;
+  final IndicatorStyles indicatorStyles;
+  final List<KLineEntity>? data;
+  final ChartViewport viewport;
+  final List<MainIndicator> mainIndicators;
+  final List<SecondaryIndicator> secondaryIndicators;
+  final ChartRendererCache rendererCache;
+  final ChartDimension dimension;
+
+  final bool volHidden;
+  final bool isLine;
   final bool hideGrid;
   final bool showNowPrice;
+  final bool tapShowInfoDialog;
+  final int fixedLength;
   final VerticalTextAlignment verticalTextAlignment;
-  final BaseDimension baseDimension;
 
-  ChartPainter(
-    this.chartStyle,
-    this.chartColors, {
-    required this.lines, //For TrendLine
-    required this.isTrendLine, //For TrendLine
-    required this.selectY, //For TrendLine
-    required this.sink,
-    required datas,
-    required scaleX,
-    required scrollX,
-    required isLongPass,
-    required selectX,
-    required xFrontPadding,
-    required this.baseDimension,
-    isOnTap,
-    isTapShowInfoDialog,
-    required this.verticalTextAlignment,
-    mainIndicators,
-    volHidden,
-    secondaryIndicators,
-    bool isLine = false,
+  /// Whether the crosshair (long-press or tap selection) is active.
+  final bool showCrosshair;
+  final double selectX;
+
+  /// Trend-line mode and state.
+  final bool trendLineEnabled;
+  final List<TrendLine> trendLines;
+  final double selectY;
+  final int trendVersion;
+
+  /// Main panel rect of the last paint; null before the first paint.
+  /// Used by the widget for hit-testing.
+  Rect? mainRect;
+
+  // Snapshot values for shouldRepaint — [viewport] mutates in place.
+  final double _scaleX;
+  final double _scrollX;
+
+  final TextPainterCache _textCache;
+  final Paint _bgPaint = Paint();
+  final Paint _crossPaint = Paint()..isAntiAlias = true;
+  final Paint _selectPointPaint = Paint()..isAntiAlias = true;
+  final Paint _selectBorderPaint = Paint()
+    ..isAntiAlias = true
+    ..style = PaintingStyle.stroke;
+  final Paint _nowPriceLinePaint = Paint()..isAntiAlias = true;
+  final Path _dashPath = Path();
+
+  ChartPainter({
+    required this.chartStyle,
+    required this.chartColors,
+    required this.indicatorStyles,
+    required this.data,
+    required this.viewport,
+    required this.mainIndicators,
+    required this.secondaryIndicators,
+    required this.rendererCache,
+    required this.dimension,
+    required this.showCrosshair,
+    required this.selectX,
+    required this.trendLineEnabled,
+    required this.trendLines,
+    required this.selectY,
+    required this.trendVersion,
+    this.volHidden = false,
+    this.isLine = false,
     this.hideGrid = false,
     this.showNowPrice = true,
+    this.tapShowInfoDialog = false,
     this.fixedLength = 2,
-  }) : super(
-         chartStyle,
-         datas: datas,
-         scaleX: scaleX,
-         scrollX: scrollX,
-         isLongPress: isLongPass,
-         baseDimension: baseDimension,
-         isOnTap: isOnTap,
-         isTapShowInfoDialog: isTapShowInfoDialog,
-         selectX: selectX,
-         mainIndicators: mainIndicators,
-         volHidden: volHidden,
-         secondaryIndicators: secondaryIndicators,
-         xFrontPadding: xFrontPadding,
-         isLine: isLine,
-       ) {
-    paintCross = Paint()
-      ..color = this.chartColors.crossColor
-      ..strokeWidth = this.chartStyle.crossWidth
-      ..isAntiAlias = true;
-    selectPointPaint = Paint()
-      ..isAntiAlias = true
-      ..color = this.chartColors.selectFillColor;
-    selectorBorderPaint = Paint()
-      ..isAntiAlias = true
-      ..strokeWidth = this.chartStyle.borderWidth
-      ..style = PaintingStyle.stroke
-      ..color = this.chartColors.selectBorderColor;
-
-    nowPriceSelectorPaint = Paint()
-      ..color = this.chartColors.bgColor
-      ..isAntiAlias = true;
-    nowPriceSelectorBorderPaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = this.chartStyle.borderWidth
-      ..isAntiAlias = true;
-    nowPriceLinePaint = Paint()
-      ..strokeWidth = this.chartStyle.nowPriceLineWidth
-      ..isAntiAlias = true;
+    this.verticalTextAlignment = VerticalTextAlignment.right,
+  }) : _scaleX = viewport.scaleX,
+       _scrollX = viewport.scrollX,
+       _textCache = rendererCache.textCache {
+    _bgPaint.color = chartColors.bgColor;
+    _crossPaint
+      ..color = chartColors.crossColor
+      ..strokeWidth = chartStyle.crossWidth;
+    _selectPointPaint.color = chartColors.selectFillColor;
+    _selectBorderPaint
+      ..color = chartColors.selectBorderColor
+      ..strokeWidth = chartStyle.borderWidth;
+    _nowPriceLinePaint.strokeWidth = chartStyle.nowPriceLineWidth;
   }
 
   @override
-  void initChartRenderer() {
-    // if (datas != null && datas!.isNotEmpty) {
-    //   var t = datas![0];
-    //   fixedLength = NumberUtil.getMaxDecimalLength(t.open, t.close, t.high, t.low);
-    // }
-    mMainRenderer = MainRenderer(
-      mMainRect,
-      mMainMaxValue,
-      mMainMinValue,
-      mTopPadding,
-      mainIndicators,
-      isLine,
-      fixedLength,
-      this.chartStyle,
-      this.chartColors,
-      this.scaleX,
-      verticalTextAlignment,
-      mBottomPadding,
+  void paint(Canvas canvas, Size size) {
+    canvas.clipRect(Offset.zero & size);
+    viewport.width = size.width;
+
+    final topPadding = chartStyle.topPadding + dimension.totalLabelHeight;
+    final bottomPadding = chartStyle.bottomPadding;
+    final childPadding = chartStyle.childPadding;
+    final displayHeight = size.height - topPadding - bottomPadding;
+    final volHeight = dimension.volumeHeight;
+    final secondaryHeight = dimension.secondaryHeight;
+
+    final mainHeight =
+        displayHeight - volHeight - dimension.totalSecondaryHeight;
+    final mainRect = Rect.fromLTRB(
+      0,
+      topPadding,
+      size.width,
+      topPadding + mainHeight,
     );
-    if (mVolRect != null) {
-      mVolRenderer = VolRenderer(
-        mVolRect!,
-        mVolMaxValue,
-        mVolMinValue,
-        mChildPadding,
-        fixedLength,
-        this.chartStyle,
-        this.chartColors,
-      );
-    }
-    mSecondaryRendererList.clear();
-    for (int i = 0; i < mSecondaryRectList.length; ++i) {
-      mSecondaryRendererList.add(
-        SecondaryRenderer(
-          mSecondaryRectList[i].mRect,
-          mSecondaryRectList[i].mMaxValue,
-          mSecondaryRectList[i].mMinValue,
-          mChildPadding,
-          secondaryIndicators[i],
-          fixedLength,
-          chartStyle,
-          chartColors,
+    final dateRect = Rect.fromLTRB(
+      0,
+      mainRect.bottom,
+      size.width,
+      mainRect.bottom + bottomPadding,
+    );
+    final volRect = volHidden
+        ? null
+        : Rect.fromLTRB(
+            0,
+            dateRect.bottom + childPadding,
+            size.width,
+            dateRect.bottom + volHeight,
+          );
+    final secondaryRects = <Rect>[
+      for (var i = 0; i < secondaryIndicators.length; i++)
+        Rect.fromLTRB(
+          0,
+          dateRect.bottom + volHeight + i * secondaryHeight + childPadding,
+          size.width,
+          dateRect.bottom + volHeight + i * secondaryHeight + secondaryHeight,
         ),
-      );
-    }
-  }
+    ];
+    this.mainRect = mainRect;
 
-  @override
-  void drawBg(Canvas canvas, Size size) {
-    Paint mBgPaint = Paint()..color = chartColors.bgColor;
-    Rect mainRect = Rect.fromLTRB(
-      0,
-      0,
-      mMainRect.width,
-      mMainRect.height + mTopPadding,
+    rendererCache.sync(
+      mainIndicators: mainIndicators,
+      secondaryIndicators: secondaryIndicators,
+      indicatorStyles: indicatorStyles,
+      chartStyle: chartStyle,
+      chartColors: chartColors,
+      volHidden: volHidden,
+      isLine: isLine,
+      mainTopPadding: topPadding,
+      panelTopPadding: childPadding,
+      verticalTextAlignment: verticalTextAlignment,
     );
-    canvas.drawRect(mainRect, mBgPaint);
 
-    if (mVolRect != null) {
-      Rect volRect = Rect.fromLTRB(
-        0,
-        mVolRect!.top - mChildPadding,
-        mVolRect!.width,
-        mVolRect!.bottom,
-      );
-      canvas.drawRect(volRect, mBgPaint);
-    }
+    final chartData = data;
+    final hasData = chartData != null && chartData.isNotEmpty;
+    var mainMaxValue = double.minPositive;
+    var mainMinValue = double.maxFinite;
+    var mainHighMaxValue = double.minPositive;
+    var mainLowMinValue = double.maxFinite;
+    var mainMaxIndex = 0;
+    var mainMinIndex = 0;
+    var volMaxValue = double.minPositive;
+    var volMinValue = double.maxFinite;
+    final secondaryMax = List<double>.filled(
+      secondaryIndicators.length,
+      double.minPositive,
+    );
+    final secondaryMin = List<double>.filled(
+      secondaryIndicators.length,
+      double.maxFinite,
+    );
 
-    for (int i = 0; i < mSecondaryRectList.length; ++i) {
-      Rect? mSecondaryRect = mSecondaryRectList[i].mRect;
-      Rect secondaryRect = Rect.fromLTRB(
-        0,
-        mSecondaryRect.top - mChildPadding,
-        mSecondaryRect.width,
-        mSecondaryRect.bottom,
-      );
-      canvas.drawRect(secondaryRect, mBgPaint);
-    }
-    canvas.drawRect(mDateRect, mBgPaint);
-  }
-
-  @override
-  void drawGrid(canvas) {
-    if (!hideGrid) {
-      mMainRenderer.drawGrid(canvas, mGridRows, mGridColumns);
-      mVolRenderer?.drawGrid(canvas, mGridRows, mGridColumns);
-      mSecondaryRendererList.forEach((element) {
-        element.drawGrid(canvas, mGridRows, mGridColumns);
-      });
-    }
-  }
-
-  @override
-  void drawChart(Canvas canvas, Size size) {
-    canvas.save();
-    canvas.translate(mTranslateX * scaleX, 0.0);
-    canvas.scale(scaleX, 1.0);
-    for (int i = mStartIndex; datas != null && i <= mStopIndex; i++) {
-      KLineEntity? curPoint = datas?[i];
-      if (curPoint == null) continue;
-      KLineEntity lastPoint = i == 0 ? curPoint : datas![i - 1];
-      double curX = getX(i);
-      double lastX = i == 0 ? curX : getX(i - 1);
-      mMainRenderer.drawChart(lastPoint, curPoint, lastX, curX, size, canvas);
-      mVolRenderer?.drawChart(lastPoint, curPoint, lastX, curX, size, canvas);
-      mSecondaryRendererList.forEach((element) {
-        element.drawChart(lastPoint, curPoint, lastX, curX, size, canvas);
-      });
-    }
-
-    if ((isLongPress == true || (isTapShowInfoDialog && isOnTap)) &&
-        isTrendLine == false) {
-      drawCrossLine(canvas, size);
-    }
-    if (isTrendLine == true) drawTrendLines(canvas, size);
-    canvas.restore();
-  }
-
-  @override
-  void drawVerticalText(canvas) {
-    var textStyle = getTextStyle(this.chartColors.defaultTextColor);
-    if (!hideGrid) {
-      mMainRenderer.drawVerticalText(canvas, textStyle, mGridRows);
-    }
-    mVolRenderer?.drawVerticalText(canvas, textStyle, mGridRows);
-    mSecondaryRendererList.forEach((element) {
-      element.drawVerticalText(canvas, textStyle, mGridRows);
-    });
-  }
-
-  @override
-  void drawDate(Canvas canvas, Size size) {
-    if (datas == null) return;
-
-    double columnSpace = size.width / mGridColumns;
-    double startX = getX(mStartIndex) - mPointWidth / 2;
-    double stopX = getX(mStopIndex) + mPointWidth / 2;
-    double x = 0.0;
-    double y = 0.0;
-    for (var i = 0; i <= mGridColumns; ++i) {
-      double translateX = xToTranslateX(columnSpace * i);
-
-      if (translateX >= startX && translateX <= stopX) {
-        int index = indexOfTranslateX(translateX);
-
-        if (datas?[index] == null) continue;
-        TextPainter tp = getTextPainter(getDate(datas![index].time), null);
-        y = mDateRect.top + (mBottomPadding - tp.height) / 2;
-        x = columnSpace * i - tp.width / 2;
-        // Prevent date text out of canvas
-        if (x < 0) x = 0;
-        if (x > size.width - tp.width) x = size.width - tp.width;
-        tp.paint(canvas, Offset(x, y));
+    if (hasData) {
+      final start = viewport.startIndex;
+      final stop = viewport.stopIndex;
+      for (var i = start; i <= stop; i++) {
+        final item = chartData[i];
+        // Main panel: candle high/low plus every main indicator range.
+        var maxPrice = item.high;
+        var minPrice = item.low;
+        for (final indicator in mainIndicators) {
+          final range = indicator.getMaxMinValue(item, minPrice, maxPrice);
+          minPrice = range.$1;
+          maxPrice = range.$2;
+        }
+        mainMaxValue = mainMaxValue > maxPrice ? mainMaxValue : maxPrice;
+        mainMinValue = mainMinValue < minPrice ? mainMinValue : minPrice;
+        if (mainHighMaxValue < item.high) {
+          mainHighMaxValue = item.high;
+          mainMaxIndex = i;
+        }
+        if (mainLowMinValue > item.low) {
+          mainLowMinValue = item.low;
+          mainMinIndex = i;
+        }
+        if (isLine) {
+          mainMaxValue = mainMaxValue > item.close ? mainMaxValue : item.close;
+          mainMinValue = mainMinValue < item.close ? mainMinValue : item.close;
+        }
+        // Volume panel: bar height plus both MA lines.
+        final ma5 = item.ma5Volume;
+        final ma10 = item.ma10Volume;
+        final volLineMax = _maxOf(item.vol, ma5, ma10);
+        final volLineMin = _minOf(item.vol, ma5, ma10);
+        volMaxValue = volMaxValue > volLineMax ? volMaxValue : volLineMax;
+        volMinValue = volMinValue < volLineMin ? volMinValue : volLineMin;
+        // Secondary panels.
+        for (var s = 0; s < secondaryIndicators.length; s++) {
+          final range = secondaryIndicators[s].getMaxMinValue(
+            item,
+            secondaryMin[s],
+            secondaryMax[s],
+          );
+          secondaryMin[s] = range.$1;
+          secondaryMax[s] = range.$2;
+        }
       }
     }
 
-    //    double translateX = xToTranslateX(0);
-    //    if (translateX >= startX && translateX <= stopX) {
-    //      TextPainter tp = getTextPainter(getDate(datas[mStartIndex].id));
-    //      tp.paint(canvas, Offset(0, y));
-    //    }
-    //    translateX = xToTranslateX(size.width);
-    //    if (translateX >= startX && translateX <= stopX) {
-    //      TextPainter tp = getTextPainter(getDate(datas[mStopIndex].id));
-    //      tp.paint(canvas, Offset(size.width - tp.width, y));
-    //    }
+    final mainRenderer = rendererCache.main!;
+    mainRenderer.update(
+      rect: mainRect,
+      maxValue: hasData ? mainMaxValue : 0,
+      minValue: hasData ? mainMinValue : 0,
+      fixedLength: fixedLength,
+    );
+    final volRenderer = rendererCache.vol;
+    if (volRenderer != null && volRect != null) {
+      volRenderer.update(
+        rect: volRect,
+        maxValue: hasData ? volMaxValue : 0,
+        minValue: hasData ? volMinValue : 0,
+        fixedLength: fixedLength,
+      );
+    }
+    final secondaryRenderers = rendererCache.secondary;
+    for (var i = 0; i < secondaryRenderers.length; i++) {
+      secondaryRenderers[i].update(
+        rect: secondaryRects[i],
+        maxValue: hasData ? secondaryMax[i] : 0,
+        minValue: hasData ? secondaryMin[i] : 0,
+        fixedLength: fixedLength,
+      );
+    }
+
+    _drawBackground(
+      canvas,
+      mainRect,
+      volRect,
+      dateRect,
+      secondaryRects,
+      childPadding,
+    );
+
+    if (!hideGrid) {
+      mainRenderer.drawGrid(canvas);
+      volRenderer?.drawGrid(canvas);
+      for (final renderer in secondaryRenderers) {
+        renderer.drawGrid(canvas);
+      }
+    }
+
+    if (!hasData) return;
+
+    final startIndex = viewport.startIndex;
+    final stopIndex = viewport.stopIndex;
+
+    canvas.save();
+    canvas.translate(viewport.translateX * viewport.scaleX, 0.0);
+    canvas.scale(viewport.scaleX, 1.0);
+    for (var i = startIndex; i <= stopIndex; i++) {
+      final curPoint = chartData[i];
+      final lastPoint = i == 0 ? curPoint : chartData[i - 1];
+      final curX = viewport.getX(i);
+      final lastX = i == 0 ? curX : viewport.getX(i - 1);
+      mainRenderer.drawChart(
+        lastPoint,
+        curPoint,
+        lastX,
+        curX,
+        canvas,
+        scaleX: viewport.scaleX,
+      );
+      volRenderer?.drawChart(lastPoint, curPoint, lastX, curX, canvas);
+      for (final renderer in secondaryRenderers) {
+        renderer.drawChart(lastPoint, curPoint, lastX, curX, canvas);
+      }
+    }
+    if (showCrosshair && !trendLineEnabled) {
+      _drawCrossLine(canvas, size, viewport.selectedIndex(selectX));
+    }
+    canvas.restore();
+
+    final textStyle = TextStyle(
+      fontSize: 10,
+      color: chartColors.defaultTextColor,
+    );
+    if (!hideGrid) {
+      mainRenderer.drawVerticalText(canvas, textStyle);
+    }
+    volRenderer?.drawVerticalText(canvas, textStyle);
+    for (final renderer in secondaryRenderers) {
+      renderer.drawVerticalText(canvas, textStyle);
+    }
+
+    _drawDateAxis(canvas, size, dateRect, bottomPadding, chartData);
+
+    final headerEntity = showCrosshair
+        ? chartData[viewport.selectedIndex(selectX)]
+        : chartData.last;
+    mainRenderer.drawHeaderLabels(canvas, headerEntity, chartStyle.space);
+    volRenderer?.drawHeaderLabels(canvas, headerEntity, chartStyle.space);
+    for (final renderer in secondaryRenderers) {
+      renderer.drawHeaderLabels(canvas, headerEntity, chartStyle.space);
+    }
+
+    _drawMaxMin(
+      canvas,
+      mainRenderer,
+      mainMaxIndex,
+      mainMinIndex,
+      mainHighMaxValue,
+      mainLowMinValue,
+    );
+    _drawNowPrice(
+      canvas,
+      size,
+      mainRenderer,
+      chartData,
+      mainHighMaxValue,
+      mainLowMinValue,
+    );
+
+    if (showCrosshair && !trendLineEnabled) {
+      _drawCrossLineText(
+        canvas,
+        size,
+        viewport.selectedIndex(selectX),
+        dateRect,
+      );
+    }
+    if (trendLineEnabled) {
+      rendererCache.trendLineRenderer.draw(
+        canvas,
+        size,
+        lines: trendLines,
+        viewport: viewport,
+        mainRenderer: mainRenderer,
+        guideColor: chartColors.trendLineColor,
+        lineColor: chartColors.trendLineColor,
+        selectX: selectX,
+        selectY: selectY,
+        topPadding: topPadding,
+      );
+    }
   }
 
-  /// draw the cross line. when user focus
-  @override
-  void drawCrossLineText(Canvas canvas, Size size) {
-    var index = calculateSelectedX(selectX);
-    KLineEntity point = getItem(index);
-
-    TextPainter tp = getTextPainter(
-      NumberUtil.formatFixed(point.close, fixedLength),
-      chartColors.crossTextColor,
+  void _drawBackground(
+    Canvas canvas,
+    Rect mainRect,
+    Rect? volRect,
+    Rect dateRect,
+    List<Rect> secondaryRects,
+    double childPadding,
+  ) {
+    canvas.drawRect(
+      Rect.fromLTRB(0, 0, mainRect.width, mainRect.bottom),
+      _bgPaint,
     );
-    double textHeight = tp.height;
-    double textWidth = tp.width;
-
-    double w1 = 5;
-    double w2 = 3;
-    double r = textHeight / 2 + w2;
-    double y = getMainY(point.close);
-    double x;
-    double space = 4.0;
-    bool isLeft = false;
-    if (translateXtoX(getX(index)) < mWidth / 2) {
-      isLeft = false;
-      x = space;
-      RRect rect = RRect.fromLTRBR(
-        x,
-        y - r,
-        x + textWidth + 2 * w1,
-        y + r,
-        Radius.circular(2.0),
+    if (volRect != null) {
+      canvas.drawRect(
+        Rect.fromLTRB(
+          0,
+          volRect.top - childPadding,
+          volRect.width,
+          volRect.bottom,
+        ),
+        _bgPaint,
       );
-      canvas.drawRRect(rect, selectPointPaint);
-      canvas.drawRRect(rect, selectorBorderPaint);
-      tp.paint(canvas, Offset(x + w1, y - textHeight / 2));
+    }
+    for (final rect in secondaryRects) {
+      canvas.drawRect(
+        Rect.fromLTRB(0, rect.top - childPadding, rect.width, rect.bottom),
+        _bgPaint,
+      );
+    }
+    canvas.drawRect(dateRect, _bgPaint);
+  }
+
+  static double _maxOf(double a, double? b, double? c) {
+    var result = a;
+    if (b != null && b > result) result = b;
+    if (c != null && c > result) result = c;
+    return result;
+  }
+
+  static double _minOf(double a, double? b, double? c) {
+    var result = a;
+    if (b != null && b < result) result = b;
+    if (c != null && c < result) result = c;
+    return result;
+  }
+
+  void _drawCrossLine(Canvas canvas, Size size, int index) {
+    final point = data![index];
+    final x = viewport.getX(index);
+    final y = rendererCache.main!.getY(point.close);
+
+    drawDashedLine(
+      canvas,
+      Offset(x, 0),
+      Offset(x, size.height),
+      _crossPaint,
+      _dashPath,
+    );
+    drawDashedLine(
+      canvas,
+      Offset(-viewport.translateX, y),
+      Offset(-viewport.translateX + size.width / viewport.scaleX, y),
+      _crossPaint,
+      _dashPath,
+    );
+
+    final oval = viewport.scaleX >= 1
+        ? Rect.fromCenter(
+            center: Offset(x, y),
+            height: 4.0 * viewport.scaleX,
+            width: 4.0,
+          )
+        : Rect.fromCenter(
+            center: Offset(x, y),
+            height: 4.0,
+            width: 4.0 / viewport.scaleX,
+          );
+    canvas.drawOval(oval, _crossPaint);
+  }
+
+  void _drawCrossLineText(Canvas canvas, Size size, int index, Rect dateRect) {
+    final point = data![index];
+    const w1 = 5.0, w2 = 3.0, space = 4.0;
+
+    final tp = _textCache.obtain(
+      NumberUtil.formatFixed(point.close, fixedLength) ?? '',
+      TextStyle(fontSize: 10, color: chartColors.crossTextColor),
+    );
+    final textHeight = tp.height;
+    final r = textHeight / 2 + w2;
+    final y = rendererCache.main!.getY(point.close);
+    final pointOnLeft =
+        viewport.dataXToX(viewport.getX(index)) < size.width / 2;
+
+    final double bubbleLeft;
+    if (pointOnLeft) {
+      bubbleLeft = space;
     } else {
-      isLeft = true;
-      x = mWidth - textWidth - 2 * w1 - space;
-      RRect rect = RRect.fromLTRBR(
-        x,
-        y - r,
-        mWidth - space,
-        y + r,
-        Radius.circular(2.0),
-      );
-      canvas.drawRRect(rect, selectPointPaint);
-      canvas.drawRRect(rect, selectorBorderPaint);
-      tp.paint(canvas, Offset(x + w1, y - textHeight / 2));
+      bubbleLeft = size.width - tp.width - 2 * w1 - space;
     }
-
-    TextPainter dateTp = getTextPainter(
-      getDate(point.time),
-      chartColors.crossTextColor,
+    final bubbleRect = RRect.fromLTRBR(
+      bubbleLeft,
+      y - r,
+      bubbleLeft + tp.width + 2 * w1,
+      y + r,
+      const Radius.circular(2.0),
     );
-    textWidth = dateTp.width;
-    r = textHeight / 2;
-    x = translateXtoX(getX(index));
-    y = mDateRect.top;
+    canvas.drawRRect(bubbleRect, _selectPointPaint);
+    canvas.drawRRect(bubbleRect, _selectBorderPaint);
+    tp.paint(canvas, Offset(bubbleLeft + w1, y - textHeight / 2));
 
-    if (x < textWidth + 2 * w1) {
-      x = 1 + textWidth / 2 + w1;
-    } else if (mWidth - x < textWidth + 2 * w1) {
-      x = mWidth - 1 - textWidth / 2 - w1;
+    final dateTp = _textCache.obtain(
+      _formatDate(point.time),
+      TextStyle(fontSize: 10, color: chartColors.crossTextColor),
+    );
+    final dateWidth = dateTp.width;
+    var x = viewport.dataXToX(viewport.getX(index));
+    if (x < dateWidth + 2 * w1) {
+      x = 1 + dateWidth / 2 + w1;
+    } else if (size.width - x < dateWidth + 2 * w1) {
+      x = size.width - 1 - dateWidth / 2 - w1;
     }
-
-    RRect rectBox = RRect.fromLTRBR(
-      x - textWidth / 2 - w1,
-      y,
-      x + textWidth / 2 + w1,
-      mDateRect.bottom,
-      Radius.circular(2.0),
+    final dateBubble = RRect.fromLTRBR(
+      x - dateWidth / 2 - w1,
+      dateRect.top,
+      x + dateWidth / 2 + w1,
+      dateRect.bottom,
+      const Radius.circular(2.0),
     );
-
-    // double baseLine = textHeight / 2;
-    canvas.drawRRect(rectBox, selectPointPaint);
-    canvas.drawRRect(rectBox, selectorBorderPaint);
-
+    canvas.drawRRect(dateBubble, _selectPointPaint);
+    canvas.drawRRect(dateBubble, _selectBorderPaint);
     dateTp.paint(
       canvas,
       Offset(
-        x - textWidth / 2,
-        mDateRect.top + (mDateRect.height - dateTp.height) / 2,
+        x - dateWidth / 2,
+        dateRect.top + (dateRect.height - dateTp.height) / 2,
       ),
     );
-
-    //Long press to display the details of this data
-    sink.add(InfoWindowEntity(point, isLeft: isLeft));
   }
 
-  @override
-  void drawText(Canvas canvas, KLineEntity data, double x) {
-    //Long press to display the data in the press
-    if (isLongPress || (isTapShowInfoDialog && isOnTap)) {
-      var index = calculateSelectedX(selectX);
-      data = getItem(index);
+  void _drawDateAxis(
+    Canvas canvas,
+    Size size,
+    Rect dateRect,
+    double bottomPadding,
+    List<KLineEntity> chartData,
+  ) {
+    final columns = chartStyle.gridColumns;
+    final columnSpace = size.width / columns;
+    final startX = viewport.getX(viewport.startIndex) - viewport.pointWidth / 2;
+    final stopX = viewport.getX(viewport.stopIndex) + viewport.pointWidth / 2;
+    final textStyle = TextStyle(
+      fontSize: 10,
+      color: chartColors.defaultTextColor,
+    );
+
+    for (var i = 0; i <= columns; i++) {
+      final dataX = viewport.xToDataX(columnSpace * i);
+      if (dataX < startX || dataX > stopX) continue;
+      final index = viewport.indexOfDataX(dataX);
+      if (index < 0 || index >= chartData.length) continue;
+      final tp = _textCache.obtain(
+        _formatDate(chartData[index].time),
+        textStyle,
+      );
+      var x = columnSpace * i - tp.width / 2;
+      final y = dateRect.top + (bottomPadding - tp.height) / 2;
+      if (x < 0) x = 0;
+      if (x > size.width - tp.width) x = size.width - tp.width;
+      tp.paint(canvas, Offset(x, y));
     }
-    //Release to display the last data
-    mMainRenderer.drawText(canvas, data, x);
-    mVolRenderer?.drawText(canvas, data, x);
-    mSecondaryRendererList.forEach((element) {
-      element.drawText(canvas, data, x);
-    });
   }
 
-  @override
-  void drawMaxAndMin(Canvas canvas) {
-    if (isLine == true) return;
-    //plot maxima and minima
-    double x = translateXtoX(getX(mMainMinIndex));
-    double y = getMainY(mMainLowMinValue);
-    if (x < mWidth / 2) {
-      //draw right
-      TextPainter tp = getTextPainter(
-        "── " + (NumberUtil.formatFixed(mMainLowMinValue, fixedLength) ?? ''),
-        chartColors.minColor,
+  void _drawMaxMin(
+    Canvas canvas,
+    MainRenderer mainRenderer,
+    int maxIndex,
+    int minIndex,
+    double highMax,
+    double lowMin,
+  ) {
+    if (isLine) return;
+    final width = viewport.width;
+
+    var x = viewport.dataXToX(viewport.getX(minIndex));
+    var y = mainRenderer.getY(lowMin);
+    if (x < width / 2) {
+      final tp = _textCache.obtain(
+        '── ${NumberUtil.formatFixed(lowMin, fixedLength) ?? ''}',
+        TextStyle(fontSize: 10, color: chartColors.minColor),
       );
       tp.paint(canvas, Offset(x, y - tp.height / 2));
     } else {
-      TextPainter tp = getTextPainter(
-        (NumberUtil.formatFixed(mMainLowMinValue, fixedLength) ?? '') + " ──",
-        chartColors.minColor,
+      final tp = _textCache.obtain(
+        '${NumberUtil.formatFixed(lowMin, fixedLength) ?? ''} ──',
+        TextStyle(fontSize: 10, color: chartColors.minColor),
       );
       tp.paint(canvas, Offset(x - tp.width, y - tp.height / 2));
     }
-    x = translateXtoX(getX(mMainMaxIndex));
-    y = getMainY(mMainHighMaxValue);
-    if (x < mWidth / 2) {
-      //draw right
-      TextPainter tp = getTextPainter(
-        "── " + (NumberUtil.formatFixed(mMainHighMaxValue, fixedLength) ?? ''),
-        chartColors.maxColor,
+
+    x = viewport.dataXToX(viewport.getX(maxIndex));
+    y = mainRenderer.getY(highMax);
+    if (x < width / 2) {
+      final tp = _textCache.obtain(
+        '── ${NumberUtil.formatFixed(highMax, fixedLength) ?? ''}',
+        TextStyle(fontSize: 10, color: chartColors.maxColor),
       );
       tp.paint(canvas, Offset(x, y - tp.height / 2));
     } else {
-      TextPainter tp = getTextPainter(
-        (NumberUtil.formatFixed(mMainHighMaxValue, fixedLength) ?? '') + " ──",
-        chartColors.maxColor,
+      final tp = _textCache.obtain(
+        '${NumberUtil.formatFixed(highMax, fixedLength) ?? ''} ──',
+        TextStyle(fontSize: 10, color: chartColors.maxColor),
       );
       tp.paint(canvas, Offset(x - tp.width, y - tp.height / 2));
     }
   }
 
-  @override
-  void drawNowPrice(Canvas canvas) {
-    if (!this.showNowPrice) {
-      return;
-    }
+  void _drawNowPrice(
+    Canvas canvas,
+    Size size,
+    MainRenderer mainRenderer,
+    List<KLineEntity> chartData,
+    double highMax,
+    double lowMin,
+  ) {
+    if (!showNowPrice) return;
+    final value = chartData.last.close;
+    var y = mainRenderer.getY(value);
+    // Clamp into the visible value window.
+    final yLow = mainRenderer.getY(lowMin);
+    final yHigh = mainRenderer.getY(highMax);
+    if (y > yLow) y = yLow;
+    if (y < yHigh) y = yHigh;
 
-    if (datas == null) {
-      return;
-    }
+    final priceColor = value >= chartData.last.open
+        ? chartColors.nowPriceUpColor
+        : chartColors.nowPriceDnColor;
+    _nowPriceLinePaint.color = priceColor;
 
-    double value = datas!.last.close;
-    double y = getMainY(value);
-
-    //view display area boundary value drawing
-    if (y > getMainY(mMainLowMinValue)) {
-      y = getMainY(mMainLowMinValue);
-    }
-
-    if (y < getMainY(mMainHighMaxValue)) {
-      y = getMainY(mMainHighMaxValue);
-    }
-
-    Color priceColor = value >= datas!.last.open
-        ? this.chartColors.nowPriceUpColor
-        : this.chartColors.nowPriceDnColor;
-
-    nowPriceSelectorBorderPaint.color = priceColor;
-    nowPriceLinePaint.color = priceColor;
-
-    //first draw the horizontal line
-    canvas.drawDashLine(
+    drawDashedLine(
+      canvas,
       Offset(0, y),
-      Offset(-mTranslateX + mWidth / scaleX, y),
-      nowPriceLinePaint,
+      Offset(-viewport.translateX + size.width / viewport.scaleX, y),
+      _nowPriceLinePaint,
+      _dashPath,
     );
-
-    // //repaint the background and text
-    // TextPainter tp = getTextPainter(
-    //   NumberUtil.formatFixed(value, fixedLength) ?? '',
-    //   priceColor,
-    // );
-    //
-    // double paddingX = 3, paddingY = 1.5;
-    // double space = 5.0;
-    // double offsetX;
-    // switch (verticalTextAlignment) {
-    //   case VerticalTextAlignment.left:
-    //     // offsetX = paddingX;
-    //     offsetX = space;
-    //     break;
-    //   case VerticalTextAlignment.right:
-    //     offsetX = mWidth - tp.width - paddingX * 2 - space;
-    //     break;
-    // }
-    //
-    // double top = y - tp.height / 2;
-    // RRect rect = RRect.fromLTRBR(
-    //   offsetX,
-    //   top - paddingY,
-    //   offsetX + tp.width + paddingX * 2,
-    //   top + tp.height + paddingY * 2,
-    //   Radius.circular(2.0),
-    // );
-    // canvas.drawRRect(
-    //   rect,
-    //   nowPriceSelectorPaint,
-    // );
-    // canvas.drawRRect(
-    //   rect,
-    //   nowPriceSelectorBorderPaint,
-    // );
-    // tp.paint(
-    //   canvas,
-    //   Offset(offsetX + paddingX, top),
-    // );
   }
 
-  //For TrendLine
-  void drawTrendLines(Canvas canvas, Size size) {
-    var index = calculateSelectedX(selectX);
-    Paint paintY = Paint()
-      ..color = chartColors.trendLineColor
-      ..strokeWidth = 1
-      ..isAntiAlias = true;
-    double x = getX(index);
-    trendLineX = x;
-
-    double y = selectY;
-    // getMainY(point.close);
-
-    // K-line chart vertical line
-    canvas.drawLine(Offset(x, mTopPadding), Offset(x, size.height), paintY);
-    Paint paintX = Paint()
-      ..color = chartColors.trendLineColor
-      ..strokeWidth = 1
-      ..isAntiAlias = true;
-    Paint paint = Paint()
-      ..color = chartColors.trendLineColor
-      ..strokeWidth = 1.0
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-    canvas.drawLine(
-      Offset(-mTranslateX, y),
-      Offset(-mTranslateX + mWidth / scaleX, y),
-      paintX,
+  String _formatDate(int? milliseconds) {
+    final dateTime = DateTime.fromMillisecondsSinceEpoch(
+      milliseconds ?? DateTime.now().millisecondsSinceEpoch,
     );
-    if (scaleX >= 1) {
-      canvas.drawOval(
-        Rect.fromCenter(
-          center: Offset(x, y),
-          height: 15.0 * scaleX,
-          width: 15.0,
-        ),
-        paint,
-      );
-    } else {
-      canvas.drawOval(
-        Rect.fromCenter(
-          center: Offset(x, y),
-          height: 10.0,
-          width: 10.0 / scaleX,
-        ),
-        paint,
-      );
-    }
-    if (lines.isNotEmpty) {
-      lines.forEach((element) {
-        var y1 = -((element.p1.dy - 35) / element.scale) + element.maxHeight;
-        var y2 = -((element.p2.dy - 35) / element.scale) + element.maxHeight;
-        var a = (trendLineMax! - y1) * trendLineScale! + trendLineContentRec!;
-        var b = (trendLineMax! - y2) * trendLineScale! + trendLineContentRec!;
-        var p1 = Offset(element.p1.dx, a);
-        var p2 = Offset(element.p2.dx, b);
-        canvas.drawLine(
-          p1,
-          element.p2 == Offset(-1, -1) ? Offset(x, y) : p2,
-          Paint()
-            ..color = Colors.yellow
-            ..strokeWidth = 2,
-        );
-      });
-    }
+    final pattern =
+        chartStyle.datePattern ??
+        (data != null && data!.length > 1
+            ? pickDatePattern((data![1].time ?? 0) - (data!.first.time ?? 0))
+            : 'MM-dd HH:mm');
+    return dateFormat(pattern).format(dateTime);
   }
 
-  ///draw cross lines
-  void drawCrossLine(Canvas canvas, Size size) {
-    var index = calculateSelectedX(selectX);
-    KLineEntity point = getItem(index);
-    double x = getX(index);
-    double y = getMainY(point.close);
-
-    // K-line chart vertical line
-    canvas.drawDashLine(Offset(x, 0), Offset(x, size.height), paintCross);
-
-    // K-line chart horizontal line
-    canvas.drawDashLine(
-      Offset(-mTranslateX, y),
-      Offset(-mTranslateX + mWidth / scaleX, y),
-      paintCross,
-    );
-
-    if (scaleX >= 1) {
-      canvas.drawOval(
-        Rect.fromCenter(center: Offset(x, y), height: 4.0 * scaleX, width: 4.0),
-        paintCross,
-      );
-    } else {
-      canvas.drawOval(
-        Rect.fromCenter(center: Offset(x, y), height: 4.0, width: 4.0 / scaleX),
-        paintCross,
-      );
-    }
-  }
-
-  TextPainter getTextPainter(text, color) {
-    if (color == null) {
-      color = this.chartColors.defaultTextColor;
-    }
-    TextSpan span = TextSpan(text: "$text", style: getTextStyle(color));
-    TextPainter tp = TextPainter(text: span, textDirection: TextDirection.ltr);
-    tp.layout();
-    return tp;
-  }
-
-  String getDate(int? date) => dateFormat(
-    DateTime.fromMillisecondsSinceEpoch(
-      date ?? DateTime.now().millisecondsSinceEpoch,
-    ),
-    mFormats,
-  );
-
-  double getMainY(double y) => mMainRenderer.getY(y);
-
-  /// Whether the point is in the SecondaryRect
-  // bool isInSecondaryRect(Offset point) {
-  //   // return mSecondaryRect.contains(point) == true);
-  //   return false;
-  // }
-
-  /// Whether the point is in MainRect
-  bool isInMainRect(Offset point) {
-    return mMainRect.contains(point);
+  @override
+  bool shouldRepaint(ChartPainter oldDelegate) {
+    return oldDelegate.data != data ||
+        oldDelegate._scaleX != _scaleX ||
+        oldDelegate._scrollX != _scrollX ||
+        oldDelegate.selectX != selectX ||
+        oldDelegate.selectY != selectY ||
+        oldDelegate.showCrosshair != showCrosshair ||
+        oldDelegate.trendLineEnabled != trendLineEnabled ||
+        oldDelegate.trendVersion != trendVersion ||
+        oldDelegate.trendLines.length != trendLines.length ||
+        oldDelegate.mainIndicators != mainIndicators ||
+        oldDelegate.secondaryIndicators != secondaryIndicators ||
+        oldDelegate.indicatorStyles != indicatorStyles ||
+        oldDelegate.chartStyle != chartStyle ||
+        oldDelegate.chartColors != chartColors ||
+        oldDelegate.volHidden != volHidden ||
+        oldDelegate.isLine != isLine ||
+        oldDelegate.hideGrid != hideGrid ||
+        oldDelegate.showNowPrice != showNowPrice ||
+        oldDelegate.tapShowInfoDialog != tapShowInfoDialog ||
+        oldDelegate.fixedLength != fixedLength ||
+        oldDelegate.verticalTextAlignment != verticalTextAlignment;
   }
 }

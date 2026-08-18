@@ -1,4 +1,4 @@
+/// Value slot for the RSI indicator.
 mixin RSIEntity {
-  /// RSI值
   double? rsi;
 }
