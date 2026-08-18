@@ -7,6 +7,7 @@ import 'package:clean_k_chart/src/render/renderer/vol_renderer.dart';
 import 'package:clean_k_chart/src/render/text_painter_cache.dart';
 import 'package:clean_k_chart/src/style/indicator_style.dart';
 import 'package:clean_k_chart/src/style/k_chart_style.dart';
+import 'package:flutter/painting.dart';
 
 /// Long-lived render state shared across painter instances.
 ///
@@ -18,6 +19,18 @@ class ChartRendererCache {
   final TextPainterCache textCache = TextPainterCache();
 
   final TrendLineRenderer trendLineRenderer = TrendLineRenderer();
+
+  // Overlay state drawn by ChartPainter (background, crosshair, price
+  // line) — long-lived and re-targeted from colors/style in [sync] so
+  // painter rebuilds during gestures allocate no render objects.
+  final Paint bgPaint = Paint();
+  final Paint crossPaint = Paint()..isAntiAlias = true;
+  final Paint selectPointPaint = Paint()..isAntiAlias = true;
+  final Paint selectBorderPaint = Paint()
+    ..isAntiAlias = true
+    ..style = PaintingStyle.stroke;
+  final Paint nowPriceLinePaint = Paint()..isAntiAlias = true;
+  final Path dashPath = Path();
 
   MainRenderer? main;
   VolRenderer? vol;
@@ -63,6 +76,19 @@ class ChartRendererCache {
         _verticalTextAlignment == verticalTextAlignment) {
       return;
     }
+
+    // Stale-styled labels (old colors) would linger until LRU eviction.
+    textCache.clear();
+
+    bgPaint.color = chartColors.bgColor;
+    crossPaint
+      ..color = chartColors.crossColor
+      ..strokeWidth = chartStyle.crossWidth;
+    selectPointPaint.color = chartColors.selectFillColor;
+    selectBorderPaint
+      ..color = chartColors.selectBorderColor
+      ..strokeWidth = chartStyle.borderWidth;
+    nowPriceLinePaint.strokeWidth = chartStyle.nowPriceLineWidth;
 
     main = MainRenderer(
       chartStyle: chartStyle,

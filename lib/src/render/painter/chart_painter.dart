@@ -6,7 +6,6 @@ import 'package:clean_k_chart/src/render/chart_viewport.dart';
 import 'package:clean_k_chart/src/render/dash_line.dart';
 import 'package:clean_k_chart/src/render/renderer_cache.dart';
 import 'package:clean_k_chart/src/render/renderer/main_renderer.dart';
-import 'package:clean_k_chart/src/render/text_painter_cache.dart';
 import 'package:clean_k_chart/src/style/indicator_style.dart';
 import 'package:clean_k_chart/src/style/k_chart_style.dart';
 import 'package:clean_k_chart/src/utils/date_format.dart';
@@ -16,8 +15,8 @@ import 'package:flutter/rendering.dart' show CustomPainter;
 
 /// Orchestrating CustomPainter for the K-line chart.
 ///
-/// Owns no persistent render state — renderers, indicator painters and
-/// label caches live in [ChartRendererCache] held by the widget; this
+/// Owns no render state — renderers, indicator painters, overlay paints
+/// and label caches live in [ChartRendererCache] held by the widget; this
 /// painter re-targets them each frame and draws the overlays
 /// (crosshair, max/min markers, current price line, trend lines).
 class ChartPainter extends CustomPainter {
@@ -57,16 +56,6 @@ class ChartPainter extends CustomPainter {
   final double _scaleX;
   final double _scrollX;
 
-  final TextPainterCache _textCache;
-  final Paint _bgPaint = Paint();
-  final Paint _crossPaint = Paint()..isAntiAlias = true;
-  final Paint _selectPointPaint = Paint()..isAntiAlias = true;
-  final Paint _selectBorderPaint = Paint()
-    ..isAntiAlias = true
-    ..style = PaintingStyle.stroke;
-  final Paint _nowPriceLinePaint = Paint()..isAntiAlias = true;
-  final Path _dashPath = Path();
-
   /// Shared axis-label style (created once per painter, not per draw).
   final TextStyle _axisTextStyle;
   final TextStyle _crossTextStyle;
@@ -100,7 +89,6 @@ class ChartPainter extends CustomPainter {
     this.verticalTextAlignment = VerticalTextAlignment.right,
   }) : _scaleX = viewport.scaleX,
        _scrollX = viewport.scrollX,
-       _textCache = rendererCache.textCache,
        _axisTextStyle = TextStyle(
          fontSize: 10,
          color: chartColors.defaultTextColor,
@@ -108,17 +96,7 @@ class ChartPainter extends CustomPainter {
        _crossTextStyle = TextStyle(
          fontSize: 10,
          color: chartColors.crossTextColor,
-       ) {
-    _bgPaint.color = chartColors.bgColor;
-    _crossPaint
-      ..color = chartColors.crossColor
-      ..strokeWidth = chartStyle.crossWidth;
-    _selectPointPaint.color = chartColors.selectFillColor;
-    _selectBorderPaint
-      ..color = chartColors.selectBorderColor
-      ..strokeWidth = chartStyle.borderWidth;
-    _nowPriceLinePaint.strokeWidth = chartStyle.nowPriceLineWidth;
-  }
+       );
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -391,7 +369,7 @@ class ChartPainter extends CustomPainter {
   ) {
     canvas.drawRect(
       Rect.fromLTRB(0, 0, mainRect.width, mainRect.bottom),
-      _bgPaint,
+      rendererCache.bgPaint,
     );
     if (volRect != null) {
       canvas.drawRect(
@@ -401,16 +379,16 @@ class ChartPainter extends CustomPainter {
           volRect.width,
           volRect.bottom,
         ),
-        _bgPaint,
+        rendererCache.bgPaint,
       );
     }
     for (final rect in secondaryRects) {
       canvas.drawRect(
         Rect.fromLTRB(0, rect.top - childPadding, rect.width, rect.bottom),
-        _bgPaint,
+        rendererCache.bgPaint,
       );
     }
-    canvas.drawRect(dateRect, _bgPaint);
+    canvas.drawRect(dateRect, rendererCache.bgPaint);
   }
 
   static double _maxOf(double a, double? b, double? c) {
@@ -436,15 +414,15 @@ class ChartPainter extends CustomPainter {
       canvas,
       Offset(x, 0),
       Offset(x, size.height),
-      _crossPaint,
-      _dashPath,
+      rendererCache.crossPaint,
+      rendererCache.dashPath,
     );
     drawDashedLine(
       canvas,
       Offset(-viewport.translateX, y),
       Offset(-viewport.translateX + size.width / viewport.scaleX, y),
-      _crossPaint,
-      _dashPath,
+      rendererCache.crossPaint,
+      rendererCache.dashPath,
     );
 
     final oval = viewport.scaleX >= 1
@@ -458,14 +436,14 @@ class ChartPainter extends CustomPainter {
             height: 4.0,
             width: 4.0 / viewport.scaleX,
           );
-    canvas.drawOval(oval, _crossPaint);
+    canvas.drawOval(oval, rendererCache.crossPaint);
   }
 
   void _drawCrossLineText(Canvas canvas, Size size, int index, Rect dateRect) {
     final point = data![index];
     const w1 = 5.0, w2 = 3.0, space = 4.0;
 
-    final tp = _textCache.obtain(
+    final tp = rendererCache.textCache.obtain(
       NumberUtil.formatFixed(point.close, fixedLength) ?? '',
       _crossTextStyle,
     );
@@ -488,13 +466,13 @@ class ChartPainter extends CustomPainter {
       y + r,
       const Radius.circular(2.0),
     );
-    canvas.drawRRect(bubbleRect, _selectPointPaint);
-    canvas.drawRRect(bubbleRect, _selectBorderPaint);
+    canvas.drawRRect(bubbleRect, rendererCache.selectPointPaint);
+    canvas.drawRRect(bubbleRect, rendererCache.selectBorderPaint);
     tp.paint(canvas, Offset(bubbleLeft + w1, y - textHeight / 2));
 
     final dateLabel = _formatDate(point.time);
     if (dateLabel.isEmpty) return;
-    final dateTp = _textCache.obtain(dateLabel, _crossTextStyle);
+    final dateTp = rendererCache.textCache.obtain(dateLabel, _crossTextStyle);
     final dateWidth = dateTp.width;
     var x = viewport.dataXToX(viewport.getX(index));
     if (x < dateWidth + 2 * w1) {
@@ -509,8 +487,8 @@ class ChartPainter extends CustomPainter {
       dateRect.bottom,
       const Radius.circular(2.0),
     );
-    canvas.drawRRect(dateBubble, _selectPointPaint);
-    canvas.drawRRect(dateBubble, _selectBorderPaint);
+    canvas.drawRRect(dateBubble, rendererCache.selectPointPaint);
+    canvas.drawRRect(dateBubble, rendererCache.selectBorderPaint);
     dateTp.paint(
       canvas,
       Offset(
@@ -539,7 +517,7 @@ class ChartPainter extends CustomPainter {
       if (index < 0 || index >= chartData.length) continue;
       final label = _formatDate(chartData[index].time);
       if (label.isEmpty) continue;
-      final tp = _textCache.obtain(label, _axisTextStyle);
+      final tp = rendererCache.textCache.obtain(label, _axisTextStyle);
       var x = columnSpace * i - tp.width / 2;
       final y = dateRect.top + (bottomPadding - tp.height) / 2;
       if (x < 0) x = 0;
@@ -562,13 +540,13 @@ class ChartPainter extends CustomPainter {
     var x = viewport.dataXToX(viewport.getX(minIndex));
     var y = mainRenderer.getY(lowMin);
     if (x < width / 2) {
-      final tp = _textCache.obtain(
+      final tp = rendererCache.textCache.obtain(
         '── ${NumberUtil.formatFixed(lowMin, fixedLength) ?? ''}',
         TextStyle(fontSize: 10, color: chartColors.minColor),
       );
       tp.paint(canvas, Offset(x, y - tp.height / 2));
     } else {
-      final tp = _textCache.obtain(
+      final tp = rendererCache.textCache.obtain(
         '${NumberUtil.formatFixed(lowMin, fixedLength) ?? ''} ──',
         TextStyle(fontSize: 10, color: chartColors.minColor),
       );
@@ -578,13 +556,13 @@ class ChartPainter extends CustomPainter {
     x = viewport.dataXToX(viewport.getX(maxIndex));
     y = mainRenderer.getY(highMax);
     if (x < width / 2) {
-      final tp = _textCache.obtain(
+      final tp = rendererCache.textCache.obtain(
         '── ${NumberUtil.formatFixed(highMax, fixedLength) ?? ''}',
         TextStyle(fontSize: 10, color: chartColors.maxColor),
       );
       tp.paint(canvas, Offset(x, y - tp.height / 2));
     } else {
-      final tp = _textCache.obtain(
+      final tp = rendererCache.textCache.obtain(
         '${NumberUtil.formatFixed(highMax, fixedLength) ?? ''} ──',
         TextStyle(fontSize: 10, color: chartColors.maxColor),
       );
@@ -612,14 +590,14 @@ class ChartPainter extends CustomPainter {
     final priceColor = value >= chartData.last.open
         ? chartColors.nowPriceUpColor
         : chartColors.nowPriceDnColor;
-    _nowPriceLinePaint.color = priceColor;
+    rendererCache.nowPriceLinePaint.color = priceColor;
 
     drawDashedLine(
       canvas,
       Offset(0, y),
       Offset(-viewport.translateX + size.width / viewport.scaleX, y),
-      _nowPriceLinePaint,
-      _dashPath,
+      rendererCache.nowPriceLinePaint,
+      rendererCache.dashPath,
     );
   }
 

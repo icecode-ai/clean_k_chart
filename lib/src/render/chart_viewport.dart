@@ -55,8 +55,18 @@ class ChartViewport {
   /// Converts a data x back to screen x.
   double dataXToX(double dataX) => (dataX + translateX) * scaleX;
 
-  /// Index of the data point closest to data x [dataX].
-  int indexOfDataX(double dataX) => _indexOfDataX(dataX, 0, itemCount - 1);
+  /// Index of the data point closest to data x [dataX], clamped to the
+  /// data range.
+  ///
+  /// Points sit on a uniform grid (`x = i * pointWidth + pointWidth / 2`),
+  /// so the nearest index is direct rounding — this replaced a recursive
+  /// binary search that ran on every lookup.
+  int indexOfDataX(double dataX) {
+    if (itemCount == 0 || pointWidth <= 0) return 0;
+    final raw = dataX / pointWidth - 0.5;
+    if (!raw.isFinite) return dataX <= 0 ? 0 : itemCount - 1;
+    return raw.round().clamp(0, itemCount - 1);
+  }
 
   /// First visible index.
   int get startIndex => indexOfDataX(xToDataX(0));
@@ -71,26 +81,5 @@ class ChartViewport {
     if (index < startIndex) index = startIndex;
     if (index > stopIndex) index = stopIndex;
     return index;
-  }
-
-  int _indexOfDataX(double dataX, int start, int end) {
-    if (end == start || end == -1) {
-      return start;
-    }
-    if (end - start == 1) {
-      final startValue = getX(start);
-      final endValue = getX(end);
-      return (dataX - startValue).abs() < (dataX - endValue).abs()
-          ? start
-          : end;
-    }
-    final mid = start + (end - start) ~/ 2;
-    final midValue = getX(mid);
-    if (dataX < midValue) {
-      return _indexOfDataX(dataX, start, mid);
-    } else if (dataX > midValue) {
-      return _indexOfDataX(dataX, mid, end);
-    }
-    return mid;
   }
 }

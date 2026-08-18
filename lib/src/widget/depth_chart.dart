@@ -1,5 +1,6 @@
 import 'package:clean_k_chart/src/i18n/chart_translations.dart';
 import 'package:clean_k_chart/src/model/entity/depth_entity.dart';
+import 'package:clean_k_chart/src/render/depth_renderer_cache.dart';
 import 'package:clean_k_chart/src/render/painter/depth_chart_painter.dart';
 import 'package:clean_k_chart/src/style/depth_chart_style.dart';
 import 'package:flutter/material.dart';
@@ -39,6 +40,8 @@ class DepthChart extends StatefulWidget {
 }
 
 class _DepthChartState extends State<DepthChart> {
+  final DepthRendererCache _rendererCache = DepthRendererCache();
+
   Offset? _pressOffset;
   bool _isLongPress = false;
 
@@ -82,6 +85,7 @@ class _DepthChartState extends State<DepthChart> {
             chartStyle: widget.chartStyle,
             offset: widget.offset,
             translations: widget.translations,
+            rendererCache: _rendererCache,
           ),
         ),
       ),
