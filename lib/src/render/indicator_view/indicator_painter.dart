@@ -37,6 +37,11 @@ abstract class IndicatorPainter {
 
   TextStyle labelStyle(Color color) => TextStyle(fontSize: 10, color: color);
 
+  /// First calc param for single-param labels; `--` when the indicator
+  /// was constructed with an empty param list (never throws in paint).
+  String get primaryParam =>
+      indicator.calcParams.isEmpty ? '--' : '${indicator.calcParams.first}';
+
   String formatNumber(double value, int precision) =>
       NumberUtil.format(value, precision) ?? '--';
 }

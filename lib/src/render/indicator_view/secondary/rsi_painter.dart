@@ -26,8 +26,7 @@ class RSIPainter extends SecondaryIndicatorPainter {
     final rsi = entity.rsi;
     if (rsi == null) return null;
     return TextSpan(
-      text:
-          'RSI(${indicator.calcParams.first}):${formatNumber(rsi, precision)}',
+      text: 'RSI($primaryParam):${formatNumber(rsi, precision)}',
       style: labelStyle(style.rsiColor),
     );
   }

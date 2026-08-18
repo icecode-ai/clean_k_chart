@@ -27,8 +27,7 @@ class CCIPainter extends SecondaryIndicatorPainter {
     final cci = entity.cci;
     if (cci == null) return null;
     return TextSpan(
-      text:
-          'CCI(${indicator.calcParams.first}):${formatNumber(cci, precision)}',
+      text: 'CCI($primaryParam):${formatNumber(cci, precision)}',
       style: labelStyle(style.cciColor),
     );
   }

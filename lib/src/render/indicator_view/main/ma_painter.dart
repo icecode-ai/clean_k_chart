@@ -35,11 +35,14 @@ abstract class MultiLineIndicatorPainter extends IndicatorPainter {
     for (var i = 0; i < values.length; i++) {
       final value = values[i];
       if (value == null) continue;
+      // Values can outlive a param change on the indicator (stale entity
+      // slots) — guard the param lookup instead of throwing in paint.
+      final param = i < indicator.calcParams.length
+          ? '${indicator.calcParams[i]}'
+          : '-';
       spans.add(
         TextSpan(
-          text:
-              '$labelPrefix${indicator.calcParams[i]}:'
-              '${formatNumber(value, precision)}  ',
+          text: '$labelPrefix$param:${formatNumber(value, precision)}  ',
           style: labelStyle(style.colorFor(i)),
         ),
       );

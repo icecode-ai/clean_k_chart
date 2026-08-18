@@ -47,8 +47,9 @@ abstract class BaseChartRenderer {
 
   /// Re-targets layout and value range.
   ///
-  /// Flat ranges are padded symmetrically so `scaleY` stays finite
-  /// (all-zero data used to produce an infinite scale).
+  /// Non-finite ranges (NaN/∞ from bad data) and degenerate windows
+  /// (all-zero data, empty selection) fall back to a padded flat range
+  /// so [scaleY] always stays finite.
   void update({
     required Rect rect,
     required double maxValue,
@@ -57,10 +58,20 @@ abstract class BaseChartRenderer {
   }) {
     chartRect = rect;
     this.fixedLength = fixedLength;
+    if (!minValue.isFinite || !maxValue.isFinite || minValue > maxValue) {
+      minValue = 0;
+      maxValue = 0;
+    }
     if (maxValue == minValue) {
       final pad = maxValue == 0 ? 1.0 : maxValue.abs() * 0.5;
       maxValue += pad;
       minValue -= pad;
+      if (maxValue == minValue) {
+        // Subnormal center — the padding underflowed; force a
+        // representable span.
+        maxValue = 1.0;
+        minValue = -1.0;
+      }
     }
     this.maxValue = maxValue;
     this.minValue = minValue;
@@ -77,14 +88,16 @@ abstract class BaseChartRenderer {
   /// Subclasses override to add horizontal row lines.
   void drawGrid(Canvas canvas) {
     final columns = chartStyle.gridColumns;
-    final columnSpace = chartRect.width / columns;
-    for (var i = 0; i <= columns; i++) {
-      final x = columnSpace * i;
-      canvas.drawLine(
-        Offset(x, chartRect.top),
-        Offset(x, chartRect.bottom),
-        gridPaint,
-      );
+    if (columns > 0) {
+      final columnSpace = chartRect.width / columns;
+      for (var i = 0; i <= columns; i++) {
+        final x = columnSpace * i;
+        canvas.drawLine(
+          Offset(x, chartRect.top),
+          Offset(x, chartRect.bottom),
+          gridPaint,
+        );
+      }
     }
     canvas.drawLine(chartRect.topLeft, chartRect.topRight, gridPaint);
     canvas.drawLine(chartRect.bottomLeft, chartRect.bottomRight, gridPaint);

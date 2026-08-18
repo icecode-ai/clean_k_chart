@@ -72,7 +72,7 @@ class MainRenderer extends BaseChartRenderer {
   @override
   void drawGrid(Canvas canvas) {
     super.drawGrid(canvas);
-    final rows = chartStyle.gridRows;
+    final rows = chartStyle.gridRows > 0 ? chartStyle.gridRows : 1;
     final rowSpace = chartRect.height / rows;
     for (var i = 1; i < rows; i++) {
       final y = chartRect.top + rowSpace * i;
@@ -103,7 +103,7 @@ class MainRenderer extends BaseChartRenderer {
 
   @override
   void drawVerticalText(Canvas canvas, TextStyle textStyle) {
-    final rows = chartStyle.gridRows;
+    final rows = chartStyle.gridRows > 0 ? chartStyle.gridRows : 1;
     final rowSpace = chartRect.height / rows;
     for (var i = 0; i <= rows; i++) {
       final value = (rows - i) * rowSpace / scaleY + minValue;

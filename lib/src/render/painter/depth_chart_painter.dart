@@ -347,10 +347,12 @@ class DepthChartPainter extends CustomPainter {
     final popupDx = dx < _width * (isBuy ? 0.25 : 0.75)
         ? dx + offset.dx
         : dx - offset.dx - popupPainter.width;
-    final popupDy = (dy - popupPainter.height / 2).clamp(
-      offset.dy,
-      _drawHeight - popupPainter.height - offset.dy,
-    );
+    // Clamp bounds must stay ordered — a popup taller than the drawable
+    // area (very small chart) used to throw from clamp().
+    var topBound = offset.dy;
+    var bottomBound = _drawHeight - popupPainter.height - offset.dy;
+    if (bottomBound < topBound) bottomBound = topBound;
+    final popupDy = (dy - popupPainter.height / 2).clamp(topBound, bottomBound);
 
     final rect = Rect.fromLTWH(
       popupDx,
@@ -410,6 +412,9 @@ class DepthChartPainter extends CustomPainter {
         oldDelegate.asks != asks ||
         oldDelegate.pressOffset != pressOffset ||
         oldDelegate.isLongPress != isLongPress ||
+        oldDelegate.baseUnit != baseUnit ||
+        oldDelegate.quoteUnit != quoteUnit ||
+        oldDelegate.offset != offset ||
         oldDelegate.chartColors != chartColors ||
         oldDelegate.chartStyle != chartStyle ||
         oldDelegate.translations != translations;

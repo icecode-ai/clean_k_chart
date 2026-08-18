@@ -23,8 +23,13 @@ class MAStyle extends IndicatorStyle {
     ],
   });
 
-  /// The line color for param index [index].
-  Color colorFor(int index) => maColors[index % maColors.length];
+  /// The line color for param index [index]; cycles through [maColors].
+  ///
+  /// An empty custom color list falls back to a neutral color instead of
+  /// throwing a modulo-by-zero inside paint.
+  Color colorFor(int index) => maColors.isEmpty
+      ? const Color(0xFFFFC634)
+      : maColors[index % maColors.length];
 }
 
 /// Style for the BOLL indicator.

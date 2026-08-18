@@ -56,15 +56,11 @@ class NumberUtil {
     String pattern = '#,##0',
   ]) {
     try {
-      final parts = Decimal.parse(value.toString())
-          .floor(scale: precision)
-          .toString()
-          .split('.');
-      final integerPart = _format(pattern).format(num.parse(parts.first));
-      if (precision == 0 && parts.length == 1) {
-        return integerPart;
-      }
-      return '$integerPart.${parts.last}';
+      // Decimal strips trailing zeros, so the floored value is re-run
+      // through [formatFixed] to pad the fraction to exactly [precision]
+      // digits (integer-valued amounts used to come out as "1,234.1234").
+      final floored = Decimal.parse(value.toString()).floor(scale: precision);
+      return formatFixed(floored, precision, pattern);
     } catch (_) {
       return null;
     }

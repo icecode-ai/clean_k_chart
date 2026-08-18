@@ -26,7 +26,7 @@ class WRPainter extends SecondaryIndicatorPainter {
     final wr = entity.wr;
     if (wr == null) return null;
     return TextSpan(
-      text: 'WR(${indicator.calcParams.first}):${formatNumber(wr, precision)}',
+      text: 'WR($primaryParam):${formatNumber(wr, precision)}',
       style: labelStyle(style.wrColor),
     );
   }

@@ -67,6 +67,14 @@ class ChartPainter extends CustomPainter {
   final Paint _nowPriceLinePaint = Paint()..isAntiAlias = true;
   final Path _dashPath = Path();
 
+  /// Shared axis-label style (created once per painter, not per draw).
+  final TextStyle _axisTextStyle;
+  final TextStyle _crossTextStyle;
+
+  /// Date pattern resolved once per painter — deriving it from the data
+  /// interval ran for every label on every frame.
+  String? _datePattern;
+
   ChartPainter({
     required this.chartStyle,
     required this.chartColors,
@@ -92,7 +100,15 @@ class ChartPainter extends CustomPainter {
     this.verticalTextAlignment = VerticalTextAlignment.right,
   }) : _scaleX = viewport.scaleX,
        _scrollX = viewport.scrollX,
-       _textCache = rendererCache.textCache {
+       _textCache = rendererCache.textCache,
+       _axisTextStyle = TextStyle(
+         fontSize: 10,
+         color: chartColors.defaultTextColor,
+       ),
+       _crossTextStyle = TextStyle(
+         fontSize: 10,
+         color: chartColors.crossTextColor,
+       ) {
     _bgPaint.color = chartColors.bgColor;
     _crossPaint
       ..color = chartColors.crossColor
@@ -164,21 +180,24 @@ class ChartPainter extends CustomPainter {
 
     final chartData = data;
     final hasData = chartData != null && chartData.isNotEmpty;
-    var mainMaxValue = double.minPositive;
-    var mainMinValue = double.maxFinite;
-    var mainHighMaxValue = double.minPositive;
-    var mainLowMinValue = double.maxFinite;
+    // Neutral +/-infinity identities: any real (finite) value replaces
+    // them, and an empty or all-NaN window is sanitized later in
+    // [BaseChartRenderer.update] instead of producing an infinite scale.
+    var mainMaxValue = -double.infinity;
+    var mainMinValue = double.infinity;
+    var mainHighMaxValue = -double.infinity;
+    var mainLowMinValue = double.infinity;
     var mainMaxIndex = 0;
     var mainMinIndex = 0;
-    var volMaxValue = double.minPositive;
-    var volMinValue = double.maxFinite;
+    var volMaxValue = -double.infinity;
+    var volMinValue = double.infinity;
     final secondaryMax = List<double>.filled(
       secondaryIndicators.length,
-      double.minPositive,
+      -double.infinity,
     );
     final secondaryMin = List<double>.filled(
       secondaryIndicators.length,
-      double.maxFinite,
+      double.infinity,
     );
 
     if (hasData) {
@@ -302,16 +321,12 @@ class ChartPainter extends CustomPainter {
     }
     canvas.restore();
 
-    final textStyle = TextStyle(
-      fontSize: 10,
-      color: chartColors.defaultTextColor,
-    );
     if (!hideGrid) {
-      mainRenderer.drawVerticalText(canvas, textStyle);
+      mainRenderer.drawVerticalText(canvas, _axisTextStyle);
     }
-    volRenderer?.drawVerticalText(canvas, textStyle);
+    volRenderer?.drawVerticalText(canvas, _axisTextStyle);
     for (final renderer in secondaryRenderers) {
-      renderer.drawVerticalText(canvas, textStyle);
+      renderer.drawVerticalText(canvas, _axisTextStyle);
     }
 
     _drawDateAxis(canvas, size, dateRect, bottomPadding, chartData);
@@ -452,7 +467,7 @@ class ChartPainter extends CustomPainter {
 
     final tp = _textCache.obtain(
       NumberUtil.formatFixed(point.close, fixedLength) ?? '',
-      TextStyle(fontSize: 10, color: chartColors.crossTextColor),
+      _crossTextStyle,
     );
     final textHeight = tp.height;
     final r = textHeight / 2 + w2;
@@ -477,10 +492,9 @@ class ChartPainter extends CustomPainter {
     canvas.drawRRect(bubbleRect, _selectBorderPaint);
     tp.paint(canvas, Offset(bubbleLeft + w1, y - textHeight / 2));
 
-    final dateTp = _textCache.obtain(
-      _formatDate(point.time),
-      TextStyle(fontSize: 10, color: chartColors.crossTextColor),
-    );
+    final dateLabel = _formatDate(point.time);
+    if (dateLabel.isEmpty) return;
+    final dateTp = _textCache.obtain(dateLabel, _crossTextStyle);
     final dateWidth = dateTp.width;
     var x = viewport.dataXToX(viewport.getX(index));
     if (x < dateWidth + 2 * w1) {
@@ -517,20 +531,15 @@ class ChartPainter extends CustomPainter {
     final columnSpace = size.width / columns;
     final startX = viewport.getX(viewport.startIndex) - viewport.pointWidth / 2;
     final stopX = viewport.getX(viewport.stopIndex) + viewport.pointWidth / 2;
-    final textStyle = TextStyle(
-      fontSize: 10,
-      color: chartColors.defaultTextColor,
-    );
 
     for (var i = 0; i <= columns; i++) {
       final dataX = viewport.xToDataX(columnSpace * i);
       if (dataX < startX || dataX > stopX) continue;
       final index = viewport.indexOfDataX(dataX);
       if (index < 0 || index >= chartData.length) continue;
-      final tp = _textCache.obtain(
-        _formatDate(chartData[index].time),
-        textStyle,
-      );
+      final label = _formatDate(chartData[index].time);
+      if (label.isEmpty) continue;
+      final tp = _textCache.obtain(label, _axisTextStyle);
       var x = columnSpace * i - tp.width / 2;
       final y = dateRect.top + (bottomPadding - tp.height) / 2;
       if (x < 0) x = 0;
@@ -614,16 +623,25 @@ class ChartPainter extends CustomPainter {
     );
   }
 
+  /// Formats a bar timestamp for axis/crosshair labels.
+  ///
+  /// Bars without a timestamp (`null` or 0) return an empty string — the
+  /// old fallback stamped every label with the wall-clock time, making
+  /// paint output non-deterministic and costing a `DateTime.now()` per
+  /// label per frame.
   String _formatDate(int? milliseconds) {
-    final dateTime = DateTime.fromMillisecondsSinceEpoch(
-      milliseconds ?? DateTime.now().millisecondsSinceEpoch,
+    if (milliseconds == null || milliseconds <= 0) return '';
+    _datePattern ??= chartStyle.datePattern ?? _deriveDatePattern();
+    return dateFormat(_datePattern!)
+        .format(DateTime.fromMillisecondsSinceEpoch(milliseconds));
+  }
+
+  String _deriveDatePattern() {
+    final chartData = data;
+    if (chartData == null || chartData.length <= 1) return 'MM-dd HH:mm';
+    return pickDatePattern(
+      (chartData[1].time ?? 0) - (chartData.first.time ?? 0),
     );
-    final pattern =
-        chartStyle.datePattern ??
-        (data != null && data!.length > 1
-            ? pickDatePattern((data![1].time ?? 0) - (data!.first.time ?? 0))
-            : 'MM-dd HH:mm');
-    return dateFormat(pattern).format(dateTime);
   }
 
   @override
