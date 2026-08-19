@@ -31,12 +31,16 @@ export 'src/model/entity/sar_entity.dart';
 export 'src/model/entity/trend_line.dart';
 export 'src/model/entity/volume_entity.dart';
 export 'src/model/entity/wr_entity.dart';
-export 'src/style/depth_chart_style.dart';
-export 'src/style/indicator_style.dart';
 
 // Style — colors & dimensions
 export 'src/style/k_chart_style.dart';
-export 'src/widget/depth_chart.dart';
+export 'src/style/depth_chart_style.dart';
+export 'src/style/indicator_style.dart';
 
 // Widgets — user entry points
+export 'src/widget/depth_chart.dart';
 export 'src/widget/k_chart.dart';
+
+// Utils
+export 'src/utils/date_format_util.dart';
+export 'src/utils/number_util.dart';

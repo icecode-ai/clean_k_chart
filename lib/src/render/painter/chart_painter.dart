@@ -8,7 +8,7 @@ import 'package:clean_k_chart/src/render/renderer/main_renderer.dart';
 import 'package:clean_k_chart/src/render/renderer_cache.dart';
 import 'package:clean_k_chart/src/style/indicator_style.dart';
 import 'package:clean_k_chart/src/style/k_chart_style.dart';
-import 'package:clean_k_chart/src/utils/date_format.dart';
+import 'package:clean_k_chart/src/utils/date_format_util.dart';
 import 'package:clean_k_chart/src/utils/number_util.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter/rendering.dart' show CustomPainter;
@@ -611,7 +611,7 @@ class ChartPainter extends CustomPainter {
   String _formatDate(int? milliseconds) {
     if (milliseconds == null || milliseconds <= 0) return '';
     _datePattern ??= chartStyle.datePattern ?? _deriveDatePattern();
-    return formatDate(
+    return DateFormatUtil.formatDate(
       DateTime.fromMillisecondsSinceEpoch(milliseconds),
       _datePattern!,
     );
@@ -620,7 +620,7 @@ class ChartPainter extends CustomPainter {
   String _deriveDatePattern() {
     final chartData = data;
     if (chartData == null || chartData.length <= 1) return 'MM-dd HH:mm';
-    return pickDatePattern(
+    return DateFormatUtil.pickDatePattern(
       (chartData[1].time ?? 0) - (chartData.first.time ?? 0),
     );
   }

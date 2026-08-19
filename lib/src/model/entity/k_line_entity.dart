@@ -28,15 +28,21 @@ class KLineEntity
         RSIEntity,
         WREntity,
         CCIEntity {
-  int? time;
+  int time;
+  double amount;
+  double change;
+  double ratio;
 
   KLineEntity({
-    this.time,
     double open = 0,
     double high = 0,
     double low = 0,
     double close = 0,
     double vol = 0,
+    this.time = 0,
+    this.amount = 0,
+    this.change = 0,
+    this.ratio = 0,
   }) {
     this.open = open;
     this.high = high;
@@ -47,12 +53,15 @@ class KLineEntity
 
   factory KLineEntity.fromJson(Map<String, dynamic> json) {
     return KLineEntity(
-      time: _readInt(json, 'time'),
       open: _readDouble(json, 'open'),
       high: _readDouble(json, 'high'),
       low: _readDouble(json, 'low'),
       close: _readDouble(json, 'close'),
       vol: _readDouble(json, 'vol'),
+      time: _readInt(json, 'time'),
+      amount: _readDouble(json, 'amount'),
+      change: _readDouble(json, 'change'),
+      ratio: _readDouble(json, 'ratio'),
     );
   }
 
