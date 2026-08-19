@@ -32,6 +32,10 @@ class KLineEntity
   double amount;
   double change;
   double ratio;
+  double toRate;
+  double prevPrice;
+  double amplitude;
+  double openPremiumRate;
 
   KLineEntity({
     double open = 0,
@@ -43,6 +47,10 @@ class KLineEntity
     this.amount = 0,
     this.change = 0,
     this.ratio = 0,
+    this.toRate = 0,
+    this.prevPrice = 0,
+    this.amplitude = 0,
+    this.openPremiumRate = 0,
   }) {
     this.open = open;
     this.high = high;
@@ -62,6 +70,10 @@ class KLineEntity
       amount: _readDouble(json, 'amount'),
       change: _readDouble(json, 'change'),
       ratio: _readDouble(json, 'ratio'),
+      toRate: _readDouble(json, 'toRate'),
+      prevPrice: _readDouble(json, 'prevPrice'),
+      amplitude: _readDouble(json, 'amplitude'),
+      openPremiumRate: _readDouble(json, 'openPremiumRate'),
     );
   }
 
