@@ -3,6 +3,7 @@ extension NumExt on num? {
     if (this == null || this == 0) {
       return false;
     }
+
     return this!.abs().toStringAsFixed(4) != "0.0000";
   }
 }
