@@ -1,4 +1,4 @@
-import 'package:clean_k_chart/indicator/indicator_template.dart';
+import 'package:clean_k_chart/entity/boll_entity.dart';
 
 mixin CandleEntity {
   late double open;
@@ -6,14 +6,8 @@ mixin CandleEntity {
   late double low;
   late double close;
 
-  // movingAverage
   List<double>? maValueList;
-
   List<double>? emaValueList;
-
-  // stopAndReverse
   double? sar;
-
-  // bollingerBands
-  Boll? boll;
+  BollEntity? boll;
 }
