@@ -1,17 +1,23 @@
-part of '../indicator_template.dart';
+import 'dart:math';
+
+import 'package:clean_k_chart/src/entity/candle_entity.dart';
+import 'package:clean_k_chart/src/entity/k_line_entity.dart';
+import 'package:clean_k_chart/src/indicator/indicator_style.dart';
+import 'package:clean_k_chart/src/indicator/indicator_template.dart';
+import 'package:clean_k_chart/src/styles/k_chart_style.dart';
+import 'package:flutter/painting.dart';
 
 class MAIndicator extends MainIndicator<CandleEntity, MAStyle> {
   late final Paint _linePaint;
 
   MAIndicator({
-    List<int> calcParams = const [5, 10, 20, 25, 60],
+    super.calcParams = const [5, 10, 20, 25, 60],
     MAStyle indicatorStyle = const MAStyle(),
-  }): super(
-    name: 'movingAverage',
-    shortName: 'MA',
-    calcParams: calcParams,
-    indicatorStyle: indicatorStyle,
-  ) {
+  }) : super(
+         name: 'movingAverage',
+         shortName: 'MA',
+         indicatorStyle: indicatorStyle,
+       ) {
     _linePaint = Paint()
       ..isAntiAlias = true
       ..filterQuality = FilterQuality.high
@@ -19,45 +25,74 @@ class MAIndicator extends MainIndicator<CandleEntity, MAStyle> {
   }
 
   @override
-  (double, double) getMaxMinValue(KLineEntity entity, double minV, double maxV) {
-    if (entity.maValueList?.isEmpty ?? true) return (minV, maxV);
+  (double, double) getMaxMinValue(
+    KLineEntity entity,
+    double minV,
+    double maxV,
+  ) {
+    if (entity.maValueList?.isEmpty ?? true) {
+      return (minV, maxV);
+    }
+
     double minValue = minV;
     double maxValue = maxV;
+
     for (double value in entity.maValueList!) {
-      if (value == 0) continue;
-      minValue = min(value, minValue); // min(result, i == 0 ? double.maxFinite : i);
+      if (value == 0) {
+        continue;
+      }
+
+      minValue = min(value, minValue);
+
       maxValue = max(value, maxValue);
     }
+
     return (minValue, maxValue);
   }
 
   @override
-  TextSpan? drawFigure(CandleEntity entity, int precision, KChartColors chartColors) {
-    List<InlineSpan> result = [];
-    if (entity.maValueList?.isEmpty ?? true) return null;
+  TextSpan? drawFigure(
+    CandleEntity entity,
+    int precision,
+    KChartColors chartColors,
+  ) {
+    if (entity.maValueList?.isEmpty ?? true) {
+      return null;
+    }
+
+    final List<InlineSpan> result = [];
+
     for (int i = 0; i < (entity.maValueList!.length); i++) {
       if (entity.maValueList?[i] != 0) {
-        var item = TextSpan(
-          text: "MA${calcParams[i]}:${formatNumber(entity.maValueList![i], precision)}  ",
-          style: TextStyle(
-            fontSize: 10,
-            color: indicatorStyle.getMAColor(i),
+        result.add(
+          TextSpan(
+            text:
+                "MA${calcParams[i]}:${formatNumber(entity.maValueList![i], precision)}  ",
+            style: TextStyle(fontSize: 10, color: indicatorStyle.getMAColor(i)),
           ),
         );
-        result.add(item);
       }
     }
+
     return TextSpan(children: result);
   }
 
-
   @override
-  void drawChart(CandleEntity lastPoint, CandleEntity curPoint, double lastX, double curX, GetYFunction getY, Canvas canvas, KChartColors chartColors) {
+  void drawChart(
+    CandleEntity lastPoint,
+    CandleEntity curPoint,
+    double lastX,
+    double curX,
+    GetYFunction getY,
+    Canvas canvas,
+    KChartColors chartColors,
+  ) {
     if (curPoint.maValueList == null ||
         lastPoint.maValueList == null ||
         curPoint.maValueList!.length != lastPoint.maValueList!.length) {
       return;
     }
+
     for (int i = 0; i < curPoint.maValueList!.length; i++) {
       if (lastPoint.maValueList?[i] != 0) {
         canvas.drawLine(
