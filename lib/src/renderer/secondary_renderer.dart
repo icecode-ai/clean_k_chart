@@ -1,10 +1,12 @@
-import 'package:flutter/material.dart';
-import 'package:clean_k_chart/indicator/indicator_template.dart';
-import '../entity/macd_entity.dart';
-import 'base_chart_renderer.dart';
+import 'package:clean_k_chart/src/entity/macd_entity.dart';
+import 'package:clean_k_chart/src/indicator/indicator_template.dart';
+import 'package:clean_k_chart/src/renderer/base_chart_renderer.dart';
+import 'package:clean_k_chart/src/styles/k_chart_style.dart';
+import 'package:flutter/painting.dart';
 
 class SecondaryRenderer extends BaseChartRenderer<MACDEntity> {
   SecondaryIndicator indicator;
+
   final KChartStyle chartStyle;
   final KChartColors chartColors;
 
@@ -18,26 +20,50 @@ class SecondaryRenderer extends BaseChartRenderer<MACDEntity> {
     this.chartStyle,
     this.chartColors,
   ) : super(
-    chartRect: mainRect,
-    maxValue: maxValue,
-    minValue: minValue,
-    topPadding: topPadding,
-    fixedLength: fixedLength,
-    gridColor: chartColors.gridColor,
-  );
+        chartRect: mainRect,
+        maxValue: maxValue,
+        minValue: minValue,
+        topPadding: topPadding,
+        fixedLength: fixedLength,
+        gridColor: chartColors.gridColor,
+      );
 
   @override
-  void drawChart(MACDEntity lastPoint, MACDEntity curPoint, double lastX, double curX, Size size, Canvas canvas) {
-    indicator.drawChart(lastPoint, curPoint, lastX, curX, getY, canvas, chartColors);
+  void drawChart(
+    MACDEntity lastPoint,
+    MACDEntity curPoint,
+    double lastX,
+    double curX,
+    Size size,
+    Canvas canvas,
+  ) {
+    indicator.drawChart(
+      lastPoint,
+      curPoint,
+      lastX,
+      curX,
+      getY,
+      canvas,
+      chartColors,
+    );
   }
 
   @override
   void drawText(Canvas canvas, MACDEntity data, double x) {
-    TextSpan? span = indicator.drawFigure(data, fixedLength, chartColors);
-    if (span == null) return;
-    TextPainter tp = TextPainter(text: span, textDirection: TextDirection.ltr);
+    final TextSpan? span = indicator.drawFigure(data, fixedLength, chartColors);
+    if (span == null) {
+      return;
+    }
+
+    final TextPainter tp = TextPainter(
+      text: span,
+      textDirection: TextDirection.ltr,
+    );
     tp.layout();
-    tp.paint(canvas, Offset(x, chartRect.top - topPadding + chartStyle.indicatorTopMargin));
+    tp.paint(
+      canvas,
+      Offset(x, chartRect.top - topPadding + chartStyle.indicatorTopMargin),
+    );
   }
 
   @override
@@ -65,9 +91,10 @@ class SecondaryRenderer extends BaseChartRenderer<MACDEntity> {
       Offset(chartRect.width, chartRect.bottom),
       gridPaint,
     );
-    double columnSpace = chartRect.width / gridColumns;
+
+    final double columnSpace = chartRect.width / gridColumns;
     for (int i = 0; i <= columnSpace; i++) {
-      //mSecondaryRect垂直线
+      // mSecondaryRect垂直线
       canvas.drawLine(
         Offset(columnSpace * i, chartRect.top - topPadding),
         Offset(columnSpace * i, chartRect.bottom),
