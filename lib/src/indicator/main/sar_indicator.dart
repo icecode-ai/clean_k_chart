@@ -59,9 +59,13 @@ class SARIndicator extends MainIndicator<CandleEntity, SARStyle> {
     KChartColors chartColors,
   ) {
     final sar = curPoint.sar;
-    if (sar == null) return;
+    if (sar == null) {
+      return;
+    }
+
     final halfHL = (curPoint.high + curPoint.low) / 2;
-    late final color;
+
+    late final Color color;
     if (sar == halfHL) {
       color = chartColors.defaultTextColor;
     } else if (sar < halfHL) {
@@ -69,6 +73,7 @@ class SARIndicator extends MainIndicator<CandleEntity, SARStyle> {
     } else {
       color = chartColors.dnColor;
     }
+
     canvas.drawCircle(
       Offset(curX, getY(sar)),
       indicatorStyle.radius,
@@ -104,6 +109,7 @@ class SARIndicator extends MainIndicator<CandleEntity, SARStyle> {
           af = min(af + step, maxAf);
         }
         sar = preSar + af * (ep - preSar);
+
         final lowMin = min(dataList[max(1, i) - 1].low, low);
         if (sar > dataList[i].low) {
           sar = ep;
