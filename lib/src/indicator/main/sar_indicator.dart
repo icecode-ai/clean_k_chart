@@ -30,7 +30,10 @@ class SARIndicator extends MainIndicator<CandleEntity, SARStyle> {
     double minV,
     double maxV,
   ) {
-    if (entity.sar == null) return (minV, maxV);
+    if (entity.sar == null) {
+      return (minV, maxV);
+    }
+
     return (min(entity.sar!, minV), max(entity.sar!, maxV));
   }
 
@@ -40,8 +43,11 @@ class SARIndicator extends MainIndicator<CandleEntity, SARStyle> {
     int precision,
     KChartColors chartColors,
   ) {
-    double? value = entity.sar;
-    if (value == null) return null;
+    final double? value = entity.sar;
+    if (value == null) {
+      return null;
+    }
+
     return TextSpan(
       text: "SAR: ${formatNumber(value, precision)}",
       style: TextStyle(fontSize: 10, color: indicatorStyle.sarColor),
@@ -108,9 +114,11 @@ class SARIndicator extends MainIndicator<CandleEntity, SARStyle> {
           ep = high;
           af = min(af + step, maxAf);
         }
+
         sar = preSar + af * (ep - preSar);
 
         final lowMin = min(dataList[max(1, i) - 1].low, low);
+
         if (sar > dataList[i].low) {
           sar = ep;
           // Reinitialize parameters
@@ -126,8 +134,11 @@ class SARIndicator extends MainIndicator<CandleEntity, SARStyle> {
           ep = low;
           af = min(af + step, maxAf);
         }
+
         sar = preSar + af * (ep - preSar);
+
         final highMax = max(dataList[max(1, i) - 1].high, high);
+
         if (sar < dataList[i].high) {
           sar = ep;
           // Reinitialize parameters

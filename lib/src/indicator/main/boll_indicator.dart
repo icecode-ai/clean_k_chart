@@ -124,7 +124,7 @@ class BOLLIndicator extends MainIndicator<CandleEntity, BOLLStyle> {
     }
 
     if (positions.length == 4) {
-      Path fillPath = Path()
+      final Path fillPath = Path()
         ..moveTo(positions[0].dx, positions[0].dy)
         ..lineTo(positions[1].dx, positions[1].dy)
         ..lineTo(positions[2].dx, positions[2].dy)
@@ -146,8 +146,8 @@ class BOLLIndicator extends MainIndicator<CandleEntity, BOLLStyle> {
 
   @override
   void calc(List<KLineEntity> dataList) {
-    int n = calcParams[0];
-    int k = calcParams[1];
+    final int n = calcParams[0];
+    final int k = calcParams[1];
 
     _calcBOLLMA(n, dataList);
 
@@ -156,6 +156,7 @@ class BOLLIndicator extends MainIndicator<CandleEntity, BOLLStyle> {
 
       if (i >= n) {
         double md = 0;
+
         for (int j = i - n + 1; j <= i; j++) {
           double c = dataList[j].close;
           double m = entity.boll!.bollMa!;

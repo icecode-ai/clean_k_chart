@@ -43,7 +43,6 @@ class MAIndicator extends MainIndicator<CandleEntity, MAStyle> {
       }
 
       minValue = min(value, minValue);
-
       maxValue = max(value, maxValue);
     }
 
@@ -106,19 +105,23 @@ class MAIndicator extends MainIndicator<CandleEntity, MAStyle> {
 
   @override
   void calc(List<KLineEntity> dataList) {
-    List<double> ma = List<double>.filled(calcParams.length, 0);
+    final List<double> ma = List<double>.filled(calcParams.length, 0);
+
     if (dataList.isNotEmpty) {
       for (int i = 0; i < dataList.length; i++) {
-        KLineEntity entity = dataList[i];
+        final KLineEntity entity = dataList[i];
         final closePrice = entity.close;
+
         entity.maValueList = List<double>.filled(calcParams.length, 0);
 
         for (int j = 0; j < calcParams.length; j++) {
           ma[j] += closePrice;
+
           if (i == calcParams[j] - 1) {
             entity.maValueList?[j] = ma[j] / calcParams[j];
           } else if (i >= calcParams[j]) {
             ma[j] -= dataList[i - calcParams[j]].close;
+
             entity.maValueList?[j] = ma[j] / calcParams[j];
           }
         }
