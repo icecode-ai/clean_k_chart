@@ -1,17 +1,15 @@
-part of 'indicator_template.dart';
+import 'package:flutter/animation.dart';
 
 class IndicatorStyle {
   final double lineWidth;
   final double strokeWidth;
 
-  const IndicatorStyle({
-    this.lineWidth = 1.0,
-    this.strokeWidth = 0.8,
-  });
+  const IndicatorStyle({this.lineWidth = 1.0, this.strokeWidth = 0.8});
 }
 
 class MAStyle extends IndicatorStyle {
   final List<Color> maColors;
+
   const MAStyle({
     this.maColors = const [
       Color(0xFFFF0000),
@@ -28,6 +26,7 @@ class MAStyle extends IndicatorStyle {
     if (index >= maColors.length) {
       return maColors[index % maColors.length];
     }
+
     return maColors[index];
   }
 }
@@ -61,25 +60,19 @@ class SARStyle extends IndicatorStyle {
 class CCIStyle extends IndicatorStyle {
   final Color cciColor;
 
-  const CCIStyle({
-    this.cciColor = const Color(0xFFFFC634),
-  });
+  const CCIStyle({this.cciColor = const Color(0xFFFFC634)});
 }
 
 class RSIStyle extends IndicatorStyle {
   final Color rsiColor;
 
-  const RSIStyle({
-    this.rsiColor = const Color(0xFFFFC634),
-  });
+  const RSIStyle({this.rsiColor = const Color(0xFFFFC634)});
 }
 
 class WRStyle extends IndicatorStyle {
   final Color wrColor;
 
-  const WRStyle({
-    this.wrColor = const Color(0xFFFFC634),
-  });
+  const WRStyle({this.wrColor = const Color(0xFFFFC634)});
 }
 
 class KDJStyle extends IndicatorStyle {
