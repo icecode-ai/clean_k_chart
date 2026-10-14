@@ -1,15 +1,17 @@
 import 'dart:math';
-import 'package:flutter/material.dart' show Color, TextStyle, Rect, Canvas, Size, CustomPainter;
-import 'package:clean_k_chart/indicator/indicator_template.dart';
-import 'package:clean_k_chart/utils/date_format_util.dart';
-import '../styles/k_chart_style.dart' show KChartStyle;
-import '../entity/k_line_entity.dart';
-import 'base_dimension.dart';
+
+import 'package:clean_k_chart/src/entity/k_line_entity.dart';
+import 'package:clean_k_chart/src/indicator/indicator_template.dart';
+import 'package:clean_k_chart/src/renderer/base_dimension.dart';
+import 'package:clean_k_chart/src/styles/k_chart_style.dart';
+import 'package:clean_k_chart/src/utils/date_format_util.dart';
+import 'package:flutter/rendering.dart';
 
 /// BaseChartPainter
 abstract class BaseChartPainter extends CustomPainter {
   static double maxScrollX = 0.0;
-  List<KLineEntity>? datas; // data of chart
+
+  List<KLineEntity>? datas;
 
   List<MainIndicator> mainIndicators;
 
@@ -35,9 +37,11 @@ abstract class BaseChartPainter extends CustomPainter {
   /// Secondary list support
   List<RenderRect> mSecondaryRectList = [];
   late double mDisplayHeight, mWidth;
+
   // padding
   // mBottomPadding: dateRect height
   double mTopPadding = 20.0, mBottomPadding = 16.0, mChildPadding = 12.0;
+
   // grid: rows - columns
   int mGridRows = 4, mGridColumns = 4;
   int mStartIndex = 0, mStopIndex = 0;
@@ -51,6 +55,7 @@ abstract class BaseChartPainter extends CustomPainter {
   double mDataLen = 0.0; // the data occupies the total length of the screen
   final KChartStyle chartStyle;
   late double mPointWidth;
+
   // format time
   List<String> mFormats = [yyyy, '-', mm, '-', dd, ' ', HH, ':', nn];
   double xFrontPadding;
@@ -59,7 +64,6 @@ abstract class BaseChartPainter extends CustomPainter {
   final BaseDimension baseDimension;
 
   /// constructor BaseChartPainter
-  ///
   BaseChartPainter(
     this.chartStyle, {
     this.datas,
@@ -77,32 +81,38 @@ abstract class BaseChartPainter extends CustomPainter {
     this.isLine = false,
   }) {
     mItemCount = datas?.length ?? 0;
-    mPointWidth = this.chartStyle.pointWidth;
-    mTopPadding = this.chartStyle.topPadding + baseDimension.totalLabelHeight; // space to display text of main chart
-    mBottomPadding = this.chartStyle.bottomPadding;
-    mChildPadding = this.chartStyle.childPadding;
-    mGridRows = this.chartStyle.gridRows;
-    mGridColumns = this.chartStyle.gridColumns;
+    mPointWidth = chartStyle.pointWidth;
+    mTopPadding =
+        chartStyle.topPadding +
+        baseDimension.totalLabelHeight; // space to display text of main chart
+    mBottomPadding = chartStyle.bottomPadding;
+    mChildPadding = chartStyle.childPadding;
+    mGridRows = chartStyle.gridRows;
+    mGridColumns = chartStyle.gridColumns;
     mDataLen = mItemCount * mPointWidth;
+
     initFormats();
   }
 
   /// init format time
   void initFormats() {
-    if (this.chartStyle.dateTimeFormat != null) {
-      mFormats = this.chartStyle.dateTimeFormat!;
+    if (chartStyle.dateTimeFormat != null) {
+      mFormats = chartStyle.dateTimeFormat!;
+
       return;
     }
 
     if (mItemCount < 2) {
       mFormats = [yyyy, '-', mm, '-', dd, ' ', HH, ':', nn];
+
       return;
     }
 
-    int firstTime = datas!.first.time ?? 0;
-    int secondTime = datas![1].time ?? 0;
+    int firstTime = datas!.first.time;
+    int secondTime = datas![1].time;
     int time = secondTime - firstTime;
     time ~/= 1000;
+
     // monthly line
     if (time >= 24 * 60 * 60 * 28) {
       mFormats = [yy, '-', mm];
@@ -119,8 +129,10 @@ abstract class BaseChartPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     canvas.clipRect(Rect.fromLTRB(0, 0, size.width, size.height));
+
     mDisplayHeight = size.height - mTopPadding - mBottomPadding;
     mWidth = size.width;
+
     initRect(size);
     calculateValue();
     initChartRenderer();
@@ -129,12 +141,13 @@ abstract class BaseChartPainter extends CustomPainter {
     canvas.scale(1, 1);
     drawBg(canvas, size);
     drawGrid(canvas);
+
     if (datas != null && datas!.isNotEmpty) {
       drawChart(canvas, size);
       drawVerticalText(canvas);
       drawDate(canvas, size);
 
-      drawText(canvas, datas!.last, this.chartStyle.space);
+      drawText(canvas, datas!.last, chartStyle.space);
       drawMaxAndMin(canvas);
       drawNowPrice(canvas);
 
@@ -142,6 +155,7 @@ abstract class BaseChartPainter extends CustomPainter {
         drawCrossLineText(canvas, size);
       }
     }
+
     canvas.restore();
   }
 
@@ -152,13 +166,13 @@ abstract class BaseChartPainter extends CustomPainter {
   void drawBg(Canvas canvas, Size size);
 
   /// draw the grid of chart
-  void drawGrid(canvas);
+  void drawGrid(Canvas canvas);
 
   /// draw chart
   void drawChart(Canvas canvas, Size size);
 
   /// draw vertical text
-  void drawVerticalText(canvas);
+  void drawVerticalText(Canvas canvas);
 
   /// draw date
   void drawDate(Canvas canvas, Size size);
@@ -206,29 +220,41 @@ abstract class BaseChartPainter extends CustomPainter {
 
     mSecondaryRectList.clear();
     for (int i = 0; i < secondaryIndicators.length; ++i) {
-      mSecondaryRectList.add(RenderRect(
-        Rect.fromLTRB(
-          0,
-          mDateRect.bottom + volHeight + i * secondaryHeight + mChildPadding,
-          mWidth,
-          mDateRect.bottom + volHeight + i * secondaryHeight + secondaryHeight,
+      mSecondaryRectList.add(
+        RenderRect(
+          Rect.fromLTRB(
+            0,
+            mDateRect.bottom + volHeight + i * secondaryHeight + mChildPadding,
+            mWidth,
+            mDateRect.bottom +
+                volHeight +
+                i * secondaryHeight +
+                secondaryHeight,
+          ),
         ),
-      ));
+      );
     }
   }
 
   /// calculate values
-  calculateValue() {
-    if (datas == null) return;
-    if (datas!.isEmpty) return;
+  void calculateValue() {
+    if (datas == null || datas!.isEmpty) {
+      return;
+    }
+
     maxScrollX = getMinTranslateX().abs();
+
     setTranslateXFromScrollX(scrollX);
+
     mStartIndex = indexOfTranslateX(xToTranslateX(0));
     mStopIndex = indexOfTranslateX(xToTranslateX(mWidth));
+
     for (int i = mStartIndex; i <= mStopIndex; i++) {
       var item = datas![i];
+
       getMainMaxMinValue(item, i);
       getVolMaxMinValue(item);
+
       for (int idx = 0; idx < mSecondaryRectList.length; ++idx) {
         getSecondaryMaxMinValue(idx, item);
       }
@@ -252,6 +278,7 @@ abstract class BaseChartPainter extends CustomPainter {
       mMainHighMaxValue = item.high;
       mMainMaxIndex = i;
     }
+
     if (mMainLowMinValue > item.low) {
       mMainLowMinValue = item.low;
       mMainMinIndex = i;
@@ -267,22 +294,24 @@ abstract class BaseChartPainter extends CustomPainter {
   void getVolMaxMinValue(KLineEntity item) {
     mVolMaxValue = max(
       mVolMaxValue,
-      max(item.vol, max(item.MA5Volume ?? 0, item.MA10Volume ?? 0)),
+      max(item.vol, max(item.ma5Volume ?? 0, item.ma10Volume ?? 0)),
     );
+
     mVolMinValue = min(
       mVolMinValue,
-      min(item.vol, min(item.MA5Volume ?? 0, item.MA10Volume ?? 0)),
+      min(item.vol, min(item.ma5Volume ?? 0, item.ma10Volume ?? 0)),
     );
   }
 
   // compute maximum and minimum of secondary value
-  getSecondaryMaxMinValue(int index, KLineEntity item) {
-    SecondaryIndicator indicator = secondaryIndicators[index];
+  void getSecondaryMaxMinValue(int index, KLineEntity item) {
+    final SecondaryIndicator indicator = secondaryIndicators[index];
     final value = indicator.getMaxMinValue(
       item,
       mSecondaryRectList[index].mMinValue,
       mSecondaryRectList[index].mMaxValue,
     );
+
     mSecondaryRectList[index].mMinValue = value.$1;
     mSecondaryRectList[index].mMaxValue = value.$2;
   }
@@ -290,22 +319,26 @@ abstract class BaseChartPainter extends CustomPainter {
   // translate x
   double xToTranslateX(double x) => -mTranslateX + x / scaleX;
 
-  int indexOfTranslateX(double translateX) => _indexOfTranslateX(translateX, 0, mItemCount - 1);
+  int indexOfTranslateX(double translateX) =>
+      _indexOfTranslateX(translateX, 0, mItemCount - 1);
 
   /// Using binary search for the index of the current value
   int _indexOfTranslateX(double translateX, int start, int end) {
     if (end == start || end == -1) {
       return start;
     }
+
     if (end - start == 1) {
-      double startValue = getX(start);
-      double endValue = getX(end);
+      final double startValue = getX(start);
+      final double endValue = getX(end);
+
       return (translateX - startValue).abs() < (translateX - endValue).abs()
-        ? start
-        : end;
+          ? start
+          : end;
     }
-    int mid = start + (end - start) ~/ 2;
-    double midValue = getX(mid);
+
+    final int mid = start + (end - start) ~/ 2;
+    final double midValue = getX(mid);
     if (translateX < midValue) {
       return _indexOfTranslateX(translateX, start, mid);
     } else if (translateX > midValue) {
@@ -322,19 +355,16 @@ abstract class BaseChartPainter extends CustomPainter {
 
   KLineEntity getItem(int position) {
     return datas![position];
-    // if (datas != null) {
-    //   return datas[position];
-    // } else {
-    //   return null;
-    // }
   }
 
   /// scrollX convert to TranslateX
-  void setTranslateXFromScrollX(double scrollX) => mTranslateX = scrollX + getMinTranslateX();
+  void setTranslateXFromScrollX(double scrollX) =>
+      mTranslateX = scrollX + getMinTranslateX();
 
   /// get the minimum value of translation
   double getMinTranslateX() {
     var x = -mDataLen + mWidth / scaleX - mPointWidth / 2 - xFrontPadding;
+
     return x >= 0 ? 0.0 : x;
   }
 
@@ -344,14 +374,17 @@ abstract class BaseChartPainter extends CustomPainter {
     if (mSelectedIndex < mStartIndex) {
       mSelectedIndex = mStartIndex;
     }
+
     if (mSelectedIndex > mStopIndex) {
       mSelectedIndex = mStopIndex;
     }
+
     return mSelectedIndex;
   }
 
   /// translateX is converted to X in view
-  double translateXtoX(double translateX) => (translateX + mTranslateX) * scaleX;
+  double translateXtoX(double translateX) =>
+      (translateX + mTranslateX) * scaleX;
 
   /// define text style
   TextStyle getTextStyle(Color color) {
