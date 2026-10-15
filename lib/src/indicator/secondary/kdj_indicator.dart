@@ -119,7 +119,7 @@ class KDJIndicator extends SecondaryIndicator<MACDEntity, KDJStyle> {
     Canvas canvas,
     KChartColors chartColors,
   ) {
-    if (curPoint.k != null || lastPoint.k != null) {
+    if (curPoint.k != null && lastPoint.k != null) {
       canvas.drawLine(
         Offset(curX, getY(curPoint.k!)),
         Offset(lastX, getY(lastPoint.k!)),
