@@ -59,7 +59,6 @@ class KChartWidget extends StatefulWidget {
   final KChartColors chartColors;
   final KChartStyle chartStyle;
   final VerticalTextAlignment verticalTextAlignment;
-  final bool isTrendLine;
   final double xFrontPadding;
   final WidgetDetailBuilder detailBuilder;
 
@@ -69,7 +68,6 @@ class KChartWidget extends StatefulWidget {
     this.chartColors, {
     super.key,
     required this.detailBuilder,
-    required this.isTrendLine,
     this.xFrontPadding = 0,
     this.mainIndicators = const [],
     this.secondaryIndicators = const [],
@@ -148,14 +146,8 @@ class _KChartWidgetState extends State<KChartWidget>
       widget.chartStyle,
       widget.chartColors,
       baseDimension: baseDimension,
-      lines: lines,
-      //For TrendLine
       sink: mInfoWindowStream.sink,
       xFrontPadding: widget.xFrontPadding,
-      isTrendLine: widget.isTrendLine,
-      //For TrendLine
-      selectY: mSelectY,
-      //For TrendLine
       datas: widget.datas,
       scaleX: mScaleX,
       scrollX: mScrollX,
@@ -175,37 +167,14 @@ class _KChartWidgetState extends State<KChartWidget>
 
     return GestureDetector(
       onTapUp: (details) {
-        if (!widget.isTrendLine &&
-            painter.isInMainRect(details.localPosition)) {
+        if (painter.isInMainRect(details.localPosition)) {
           isOnTap = true;
+
           if (mSelectX != details.localPosition.dx &&
               widget.isTapShowInfoDialog) {
             mSelectX = details.localPosition.dx;
             notifyChanged();
           }
-        }
-
-        if (widget.isTrendLine && !isLongPress && enableCordRecord) {
-          enableCordRecord = false;
-
-          final Offset p1 = Offset(getTrendLineX(), mSelectY);
-          if (!waitingForOtherPairofCords) {
-            lines.add(
-              TrendLine(p1, Offset(-1, -1), trendLineMax!, trendLineScale!),
-            );
-          }
-
-          if (waitingForOtherPairofCords) {
-            var a = lines.last;
-
-            lines.removeLast();
-            lines.add(TrendLine(a.p1, p1, trendLineMax!, trendLineScale!));
-            waitingForOtherPairofCords = false;
-          } else {
-            waitingForOtherPairofCords = true;
-          }
-
-          notifyChanged();
         }
       },
       onHorizontalDragDown: (details) {
@@ -242,43 +211,17 @@ class _KChartWidgetState extends State<KChartWidget>
         isLongPress = true;
 
         if ((mSelectX != details.localPosition.dx ||
-                mSelectY != details.globalPosition.dy) &&
-            !widget.isTrendLine) {
+            mSelectY != details.globalPosition.dy)) {
           mSelectX = details.localPosition.dx;
 
-          notifyChanged();
-        }
-
-        //For TrendLine
-        if (widget.isTrendLine && changeinXposition == null) {
-          mSelectX = changeinXposition = details.localPosition.dx;
-          mSelectY = changeinYposition = details.globalPosition.dy;
-          notifyChanged();
-        }
-
-        //For TrendLine
-        if (widget.isTrendLine && changeinXposition != null) {
-          changeinXposition = details.localPosition.dx;
-          changeinYposition = details.globalPosition.dy;
           notifyChanged();
         }
       },
       onLongPressMoveUpdate: (details) {
         if ((mSelectX != details.localPosition.dx ||
-                mSelectY != details.globalPosition.dy) &&
-            !widget.isTrendLine) {
+            mSelectY != details.globalPosition.dy)) {
           mSelectX = details.localPosition.dx;
           mSelectY = details.localPosition.dy;
-
-          notifyChanged();
-        }
-
-        if (widget.isTrendLine) {
-          mSelectX = mSelectX + (details.localPosition.dx - changeinXposition!);
-          changeinXposition = details.localPosition.dx;
-          mSelectY =
-              mSelectY + (details.globalPosition.dy - changeinYposition!);
-          changeinYposition = details.globalPosition.dy;
 
           notifyChanged();
         }

@@ -30,11 +30,6 @@ class TrendLine {
 }
 
 class ChartPainter extends BaseChartPainter {
-  final List<TrendLine> lines; //For TrendLine
-  final bool isTrendLine; //For TrendLine
-  bool recordingCord = false; //For TrendLine
-  final double selectY; //For TrendLine
-
   late BaseChartRenderer mMainRenderer;
   BaseChartRenderer? mVolRenderer;
   Set<BaseChartRenderer> mSecondaryRendererList = {};
@@ -62,9 +57,6 @@ class ChartPainter extends BaseChartPainter {
   ChartPainter(
     this.chartStyle,
     this.chartColors, {
-    required this.lines, //For TrendLine
-    required this.isTrendLine, //For TrendLine
-    required this.selectY, //For TrendLine
     required this.sink,
     required datas,
     required scaleX,
@@ -246,13 +238,8 @@ class ChartPainter extends BaseChartPainter {
       }
     }
 
-    if ((isLongPress == true || (isTapShowInfoDialog && isOnTap)) &&
-        isTrendLine == false) {
+    if ((isLongPress == true || (isTapShowInfoDialog && isOnTap))) {
       drawCrossLine(canvas, size);
-    }
-
-    if (isTrendLine == true) {
-      drawTrendLines(canvas, size);
     }
 
     canvas.restore();
@@ -508,82 +495,6 @@ class ChartPainter extends BaseChartPainter {
       Offset(-mTranslateX + mWidth / scaleX, y),
       nowPriceLinePaint,
     );
-  }
-
-  //For TrendLine
-  void drawTrendLines(Canvas canvas, Size size) {
-    final index = calculateSelectedX(selectX);
-
-    final Paint paintY = Paint()
-      ..color = chartColors.trendLineColor
-      ..strokeWidth = 1
-      ..isAntiAlias = true;
-
-    final double x = getX(index);
-
-    trendLineX = x;
-
-    final double y = selectY;
-    // getMainY(point.close);
-
-    // K-line chart vertical line
-    canvas.drawLine(Offset(x, mTopPadding), Offset(x, size.height), paintY);
-
-    final Paint paintX = Paint()
-      ..color = chartColors.trendLineColor
-      ..strokeWidth = 1
-      ..isAntiAlias = true;
-
-    final Paint paint = Paint()
-      ..color = chartColors.trendLineColor
-      ..strokeWidth = 1.0
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-
-    canvas.drawLine(
-      Offset(-mTranslateX, y),
-      Offset(-mTranslateX + mWidth / scaleX, y),
-      paintX,
-    );
-
-    if (scaleX >= 1) {
-      canvas.drawOval(
-        Rect.fromCenter(
-          center: Offset(x, y),
-          height: 15.0 * scaleX,
-          width: 15.0,
-        ),
-        paint,
-      );
-    } else {
-      canvas.drawOval(
-        Rect.fromCenter(
-          center: Offset(x, y),
-          height: 10.0,
-          width: 10.0 / scaleX,
-        ),
-        paint,
-      );
-    }
-
-    if (lines.isNotEmpty) {
-      for (var element in lines) {
-        var y1 = -((element.p1.dy - 35) / element.scale) + element.maxHeight;
-        var y2 = -((element.p2.dy - 35) / element.scale) + element.maxHeight;
-        var a = (trendLineMax! - y1) * trendLineScale! + trendLineContentRec!;
-        var b = (trendLineMax! - y2) * trendLineScale! + trendLineContentRec!;
-        var p1 = Offset(element.p1.dx, a);
-        var p2 = Offset(element.p2.dx, b);
-
-        canvas.drawLine(
-          p1,
-          element.p2 == const Offset(-1, -1) ? Offset(x, y) : p2,
-          Paint()
-            ..color = const Color(0xFFFFC634)
-            ..strokeWidth = 2,
-        );
-      }
-    }
   }
 
   ///draw cross lines

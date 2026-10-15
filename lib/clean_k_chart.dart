@@ -1,14 +1,11 @@
-library;
-
-export 'k_chart_widget.dart'; //布局
-export 'styles/k_chart_style.dart';
-export 'styles/depth_chart_style.dart';
-export 'depth_chart.dart';
-export 'chart_translations.dart';
-
-export 'utils/index.dart'; //数据加工
-export 'entity/index.dart'; //数据
-export 'renderer/index.dart';
-export 'extension/num_ext.dart';
-
-export 'indicator/indicator_template.dart';
+export 'src/entity/k_line_entity.dart';
+export 'src/indicator/indicator_template.dart';
+export 'src/indicator/main/ma_indicator.dart';
+export 'src/indicator/secondary/cci_indicator.dart';
+export 'src/indicator/secondary/kdj_indicator.dart';
+export 'src/indicator/secondary/macd_indicator.dart';
+export 'src/k_chart_widget.dart';
+export 'src/styles/k_chart_style.dart';
+export 'src/utils/data_util.dart';
+export 'src/utils/date_format_util.dart';
+export 'src/utils/number_util.dart';
