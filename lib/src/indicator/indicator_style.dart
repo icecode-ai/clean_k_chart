@@ -1,4 +1,4 @@
-import 'package:flutter/animation.dart';
+import 'dart:ui';
 
 class IndicatorStyle {
   final double lineWidth;
@@ -17,12 +17,16 @@ class MAStyle extends IndicatorStyle {
       Color(0xffb48ee3),
       Color(0xFF127ECC),
       Color(0xFF000000),
-      Color(0xFF127ECC),
+      Color(0xFF14AD8F),
     ],
   });
 
   /// get MA color via index
   Color getMAColor(int index) {
+    if (index < 0) {
+      throw RangeError.range(index, 0, maColors.length - 1);
+    }
+
     if (index >= maColors.length) {
       return maColors[index % maColors.length];
     }

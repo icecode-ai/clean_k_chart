@@ -61,8 +61,8 @@ class EMAIndicator extends MainIndicator<CandleEntity, MAStyle> {
 
     final List<InlineSpan> result = [];
 
-    for (int i = 0; i < (entity.emaValueList!.length); i++) {
-      if (entity.emaValueList?[i] != 0) {
+    for (int i = 0; i < entity.emaValueList!.length; i++) {
+      if (entity.emaValueList![i] != 0) {
         result.add(
           TextSpan(
             text:
@@ -93,13 +93,19 @@ class EMAIndicator extends MainIndicator<CandleEntity, MAStyle> {
     }
 
     for (int i = 0; i < curPoint.emaValueList!.length; i++) {
-      if (lastPoint.emaValueList?[i] != 0) {
-        canvas.drawLine(
-          Offset(curX, getY(curPoint.emaValueList![i])),
-          Offset(lastX, getY(lastPoint.emaValueList![i])),
-          _linePaint..color = indicatorStyle.getMAColor(i),
-        );
+      final double lastValue = lastPoint.emaValueList![i];
+      final double curValue = curPoint.emaValueList![i];
+
+      // 0 is the warm-up sentinel: skip the segment when either side is missing.
+      if (lastValue == 0 || curValue == 0) {
+        continue;
       }
+
+      canvas.drawLine(
+        Offset(curX, getY(curValue)),
+        Offset(lastX, getY(lastValue)),
+        _linePaint..color = indicatorStyle.getMAColor(i),
+      );
     }
   }
 

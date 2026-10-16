@@ -7,11 +7,6 @@ import 'package:flutter/painting.dart';
 
 enum VerticalTextAlignment { left, right }
 
-// For TrendLine
-double? trendLineMax;
-double? trendLineScale;
-double? trendLineContentRec;
-
 class MainRenderer extends BaseChartRenderer<CandleEntity> {
   late double mCandleWidth;
   late double mCandleLineWidth;
@@ -87,7 +82,7 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
         chartColors,
       );
       if (span == null) {
-        return;
+        continue;
       }
 
       final TextPainter tp = TextPainter(
@@ -96,6 +91,7 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
       );
       tp.layout(maxWidth: chartRect.width - chartStyle.space);
 
+      final double textHeight = tp.height;
       Offset offset = Offset(x, y);
 
       canvas.drawRect(
@@ -109,8 +105,9 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
       );
 
       tp.paint(canvas, offset);
+      tp.dispose();
 
-      y = y + tp.height + 2.0; // update y
+      y = y + textHeight + 2.0; // update y
     }
   }
 
@@ -302,6 +299,7 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
           Offset(offsetX, rowSpace * i - tp.height + topPadding),
         );
       }
+      tp.dispose();
     }
   }
 
@@ -330,28 +328,19 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
     canvas.drawLine(
       const Offset(0, 0),
       Offset(chartRect.width, 0),
-      gridPaint..color,
+      gridPaint,
     );
 
     /// draw bottom grid
     canvas.drawLine(
       Offset(0, chartRect.bottom + mBottomPadding),
       Offset(chartRect.width, chartRect.bottom + mBottomPadding),
-      gridPaint..color,
+      gridPaint,
     );
   }
 
   @override
   double getY(double y) {
-    //For TrendLine
-    updateTrendLineData();
-
     return (maxValue - y) * scaleY + _contentRect.top;
-  }
-
-  void updateTrendLineData() {
-    trendLineMax = maxValue;
-    trendLineScale = scaleY;
-    trendLineContentRec = _contentRect.top;
   }
 }

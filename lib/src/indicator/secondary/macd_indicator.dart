@@ -5,20 +5,20 @@ import 'package:clean_k_chart/src/entity/macd_entity.dart';
 import 'package:clean_k_chart/src/indicator/indicator_style.dart';
 import 'package:clean_k_chart/src/indicator/indicator_template.dart';
 import 'package:clean_k_chart/src/styles/k_chart_style.dart';
-import 'package:clean_k_chart/src/utils/number_util.dart';
 import 'package:flutter/painting.dart';
 
 class MACDIndicator extends SecondaryIndicator<MACDEntity, MACDStyle> {
   late final Paint _linePaint;
   late final Paint _rectPaint;
 
-  MACDIndicator({MACDStyle indicatorStyle = const MACDStyle()})
-    : super(
-        name: 'movingAverageConvergenceDivergence',
-        shortName: 'MACD',
-        calcParams: const [12, 26, 9],
-        indicatorStyle: indicatorStyle,
-      ) {
+  MACDIndicator({
+    super.calcParams = const [12, 26, 9],
+    MACDStyle indicatorStyle = const MACDStyle(),
+  }) : super(
+         name: 'movingAverageConvergenceDivergence',
+         shortName: 'MACD',
+         indicatorStyle: indicatorStyle,
+       ) {
     _linePaint = Paint()
       ..isAntiAlias = true
       ..filterQuality = FilterQuality.high
@@ -63,7 +63,7 @@ class MACDIndicator extends SecondaryIndicator<MACDEntity, MACDStyle> {
     return TextSpan(
       children: [
         TextSpan(
-          text: "MACD(12,26,9) ",
+          text: "MACD(${calcParams.join(',')}) ",
           style: getTextStyle(chartColors.defaultTextColor),
         ),
         if (entity.macd != null && entity.macd != 0)
@@ -82,41 +82,6 @@ class MACDIndicator extends SecondaryIndicator<MACDEntity, MACDStyle> {
             style: getTextStyle(indicatorStyle.deaColor),
           ),
       ],
-    );
-  }
-
-  @override
-  void drawVerticalText({
-    required Canvas canvas,
-    required TextStyle style,
-    required double maxValue,
-    required double minValue,
-    required int fixedLength,
-    required Rect chartRect,
-  }) {
-    final TextPainter maxTp = TextPainter(
-      text: TextSpan(
-        text: NumberUtil.formatFixed(maxValue, fixedLength) ?? '',
-        style: style,
-      ),
-      textDirection: TextDirection.ltr,
-    );
-    maxTp.layout();
-
-    final TextPainter minTp = TextPainter(
-      text: TextSpan(
-        text: NumberUtil.formatFixed(minValue, fixedLength) ?? '',
-        style: style,
-      ),
-      textDirection: TextDirection.ltr,
-    );
-    minTp.layout();
-
-    maxTp.paint(canvas, Offset(chartRect.width - maxTp.width, chartRect.top));
-
-    minTp.paint(
-      canvas,
-      Offset(chartRect.width - minTp.width, chartRect.bottom - minTp.height),
     );
   }
 

@@ -1,11 +1,8 @@
-import 'dart:async';
-
 import 'package:clean_k_chart/src/entity/info_window_entity.dart';
 import 'package:clean_k_chart/src/entity/k_line_entity.dart';
 import 'package:clean_k_chart/src/extension/canvas_extension.dart';
 import 'package:clean_k_chart/src/renderer/base_chart_painter.dart';
 import 'package:clean_k_chart/src/renderer/base_chart_renderer.dart';
-import 'package:clean_k_chart/src/renderer/base_dimension.dart';
 import 'package:clean_k_chart/src/renderer/main_renderer.dart';
 import 'package:clean_k_chart/src/renderer/secondary_renderer.dart';
 import 'package:clean_k_chart/src/renderer/vol_renderer.dart';
@@ -14,82 +11,52 @@ import 'package:clean_k_chart/src/utils/date_format_util.dart';
 import 'package:clean_k_chart/src/utils/number_util.dart';
 import 'package:flutter/painting.dart';
 
-double? trendLineX;
-
-double getTrendLineX() {
-  return trendLineX ?? 0;
-}
-
-class TrendLine {
-  final Offset p1;
-  final Offset p2;
-  final double maxHeight;
-  final double scale;
-
-  TrendLine(this.p1, this.p2, this.maxHeight, this.scale);
-}
+/// Called whenever the currently focused candle changes while the user is
+/// long-pressing (or tapping) the chart. A `null` value means no selection.
+typedef OnInfoWindowChanged = void Function(InfoWindowEntity? info);
 
 class ChartPainter extends BaseChartPainter {
   late BaseChartRenderer mMainRenderer;
   BaseChartRenderer? mVolRenderer;
   Set<BaseChartRenderer> mSecondaryRendererList = {};
-  StreamSink<InfoWindowEntity?> sink;
 
-  Color? upColor, dnColor;
-  Color? ma5Color, ma10Color, ma30Color;
-  Color? volColor;
-  Color? macdColor, difColor, deaColor, jColor;
   int fixedLength;
 
   final KChartColors chartColors;
 
   late Paint paintCross, selectPointPaint, selectorBorderPaint;
-  late Paint nowPriceSelectorPaint,
-      nowPriceSelectorBorderPaint,
-      nowPriceLinePaint;
+  late Paint nowPriceLinePaint;
 
-  final KChartStyle chartStyle;
   final bool hideGrid;
   final bool showNowPrice;
   final VerticalTextAlignment verticalTextAlignment;
-  final BaseDimension baseDimension;
+
+  /// Notified when the focused candle changes. Deduplicated by the widget so
+  /// identical selections do not trigger extra rebuilds.
+  final OnInfoWindowChanged onInfoWindow;
 
   ChartPainter(
-    this.chartStyle,
+    super.chartStyle,
     this.chartColors, {
-    required this.sink,
-    required datas,
-    required scaleX,
-    required scrollX,
-    required isLongPass,
-    required selectX,
-    required xFrontPadding,
-    required this.baseDimension,
-    isOnTap,
-    isTapShowInfoDialog,
-    required this.verticalTextAlignment,
-    mainIndicators,
-    volHidden,
-    secondaryIndicators,
+    required this.onInfoWindow,
+    required super.datas,
+    required super.scaleX,
+    required super.scrollX,
+    required super.isLongPress,
+    required super.selectX,
+    required super.xFrontPadding,
+    required super.baseDimension,
+    super.isOnTap,
+    super.isTapShowInfoDialog,
+    super.mainIndicators,
+    super.volHidden,
+    super.secondaryIndicators,
     super.isLine,
     this.hideGrid = false,
     this.showNowPrice = true,
     this.fixedLength = 2,
-  }) : super(
-         chartStyle,
-         datas: datas,
-         scaleX: scaleX,
-         scrollX: scrollX,
-         isLongPress: isLongPass,
-         baseDimension: baseDimension,
-         isOnTap: isOnTap,
-         isTapShowInfoDialog: isTapShowInfoDialog,
-         selectX: selectX,
-         mainIndicators: mainIndicators,
-         volHidden: volHidden,
-         secondaryIndicators: secondaryIndicators,
-         xFrontPadding: xFrontPadding,
-       ) {
+    this.verticalTextAlignment = VerticalTextAlignment.right,
+  }) {
     paintCross = Paint()
       ..color = chartColors.crossColor
       ..strokeWidth = chartStyle.crossWidth
@@ -102,19 +69,33 @@ class ChartPainter extends BaseChartPainter {
       ..strokeWidth = chartStyle.borderWidth
       ..style = PaintingStyle.stroke
       ..color = chartColors.selectBorderColor;
-    nowPriceSelectorPaint = Paint()
-      ..color = chartColors.bgColor
-      ..isAntiAlias = true;
-    nowPriceSelectorBorderPaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = chartStyle.borderWidth
-      ..isAntiAlias = true;
     nowPriceLinePaint = Paint()
       ..strokeWidth = chartStyle.nowPriceLineWidth
       ..isAntiAlias = true;
   }
 
-  static double get maxScrollX => BaseChartPainter.maxScrollX;
+  @override
+  bool shouldRepaint(covariant ChartPainter oldDelegate) {
+    return oldDelegate.datas != datas ||
+        oldDelegate.scaleX != scaleX ||
+        oldDelegate.scrollX != scrollX ||
+        oldDelegate.selectX != selectX ||
+        oldDelegate.isLongPress != isLongPress ||
+        oldDelegate.isOnTap != isOnTap ||
+        oldDelegate.isTapShowInfoDialog != isTapShowInfoDialog ||
+        oldDelegate.isLine != isLine ||
+        oldDelegate.mainIndicators != mainIndicators ||
+        oldDelegate.secondaryIndicators != secondaryIndicators ||
+        oldDelegate.volHidden != volHidden ||
+        oldDelegate.xFrontPadding != xFrontPadding ||
+        oldDelegate.baseDimension != baseDimension ||
+        oldDelegate.chartStyle != chartStyle ||
+        oldDelegate.chartColors != chartColors ||
+        oldDelegate.hideGrid != hideGrid ||
+        oldDelegate.showNowPrice != showNowPrice ||
+        oldDelegate.fixedLength != fixedLength ||
+        oldDelegate.verticalTextAlignment != verticalTextAlignment;
+  }
 
   @override
   void initChartRenderer() {
@@ -219,13 +200,10 @@ class ChartPainter extends BaseChartPainter {
     canvas.translate(mTranslateX * scaleX, 0.0);
     canvas.scale(scaleX, 1.0);
 
-    for (int i = mStartIndex; datas != null && i <= mStopIndex; i++) {
-      final KLineEntity? curPoint = datas?[i];
-      if (curPoint == null) {
-        continue;
-      }
-
-      final KLineEntity lastPoint = i == 0 ? curPoint : datas![i - 1];
+    final List<KLineEntity>? data = datas;
+    for (int i = mStartIndex; data != null && i <= mStopIndex; i++) {
+      final KLineEntity curPoint = data[i];
+      final KLineEntity lastPoint = i == 0 ? curPoint : data[i - 1];
 
       double curX = getX(i);
       double lastX = i == 0 ? curX : getX(i - 1);
@@ -299,6 +277,7 @@ class ChartPainter extends BaseChartPainter {
         }
 
         tp.paint(canvas, Offset(x, y));
+        tp.dispose();
       }
     }
   }
@@ -359,6 +338,8 @@ class ChartPainter extends BaseChartPainter {
       tp.paint(canvas, Offset(x + w1, y - textHeight / 2));
     }
 
+    tp.dispose();
+
     final TextPainter dateTp = getTextPainter(
       getDate(point.time),
       chartColors.crossTextColor,
@@ -394,9 +375,10 @@ class ChartPainter extends BaseChartPainter {
         mDateRect.top + (mDateRect.height - dateTp.height) / 2,
       ),
     );
+    dateTp.dispose();
 
     //Long press to display the details of this data
-    sink.add(InfoWindowEntity(point, isLeft: isLeft));
+    onInfoWindow(InfoWindowEntity(point, isLeft: isLeft));
   }
 
   @override
@@ -426,51 +408,41 @@ class ChartPainter extends BaseChartPainter {
     //plot maxima and minima
     double x = translateXtoX(getX(mMainMinIndex));
     double y = getMainY(mMainLowMinValue);
-
-    if (x < mWidth / 2) {
-      //draw right
-      final TextPainter tp = getTextPainter(
-        "── ${NumberUtil.formatFixed(mMainLowMinValue, fixedLength) ?? ''}",
-        chartColors.minColor,
-      );
-
-      tp.paint(canvas, Offset(x, y - tp.height / 2));
-    } else {
-      final TextPainter tp = getTextPainter(
-        "${NumberUtil.formatFixed(mMainLowMinValue, fixedLength) ?? ''} ──",
-        chartColors.minColor,
-      );
-
-      tp.paint(canvas, Offset(x - tp.width, y - tp.height / 2));
-    }
+    _drawMinMaxText(canvas, x, y, mMainLowMinValue, chartColors.minColor);
 
     x = translateXtoX(getX(mMainMaxIndex));
     y = getMainY(mMainHighMaxValue);
-    if (x < mWidth / 2) {
-      //draw right
-      final TextPainter tp = getTextPainter(
-        "── ${NumberUtil.formatFixed(mMainHighMaxValue, fixedLength) ?? ''}",
-        chartColors.maxColor,
-      );
+    _drawMinMaxText(canvas, x, y, mMainHighMaxValue, chartColors.maxColor);
+  }
 
-      tp.paint(canvas, Offset(x, y - tp.height / 2));
-    } else {
-      final TextPainter tp = getTextPainter(
-        "${NumberUtil.formatFixed(mMainHighMaxValue, fixedLength) ?? ''} ──",
-        chartColors.maxColor,
-      );
+  void _drawMinMaxText(
+    Canvas canvas,
+    double x,
+    double y,
+    double value,
+    Color color,
+  ) {
+    final String formatted = NumberUtil.formatFixed(value, fixedLength) ?? '';
+    final bool alignLeft = x < mWidth / 2;
+    final String text = alignLeft ? "── $formatted" : "$formatted ──";
 
-      tp.paint(canvas, Offset(x - tp.width, y - tp.height / 2));
-    }
+    final TextPainter tp = getTextPainter(text, color);
+    tp.paint(
+      canvas,
+      Offset(alignLeft ? x : x - tp.width, y - tp.height / 2),
+    );
+    tp.dispose();
   }
 
   @override
   void drawNowPrice(Canvas canvas) {
-    if (!showNowPrice || datas == null) {
+    final List<KLineEntity>? data = datas;
+    if (!showNowPrice || data == null || data.isEmpty) {
       return;
     }
 
-    final double value = datas!.last.close;
+    final KLineEntity last = data.last;
+    final double value = last.close;
 
     // view display area boundary value drawing
     double y = getMainY(value);
@@ -482,12 +454,9 @@ class ChartPainter extends BaseChartPainter {
       y = getMainY(mMainHighMaxValue);
     }
 
-    final Color priceColor = value >= datas!.last.open
+    nowPriceLinePaint.color = value >= last.open
         ? chartColors.nowPriceUpColor
         : chartColors.nowPriceDnColor;
-
-    nowPriceSelectorBorderPaint.color = priceColor;
-    nowPriceLinePaint.color = priceColor;
 
     //first draw the horizontal line
     canvas.drawDashLine(

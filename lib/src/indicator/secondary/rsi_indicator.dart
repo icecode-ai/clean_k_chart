@@ -5,19 +5,19 @@ import 'package:clean_k_chart/src/entity/macd_entity.dart';
 import 'package:clean_k_chart/src/indicator/indicator_style.dart';
 import 'package:clean_k_chart/src/indicator/indicator_template.dart';
 import 'package:clean_k_chart/src/styles/k_chart_style.dart';
-import 'package:clean_k_chart/src/utils/number_util.dart';
 import 'package:flutter/painting.dart';
 
 class RSIIndicator extends SecondaryIndicator<MACDEntity, RSIStyle> {
   late final Paint _linePaint;
 
-  RSIIndicator({RSIStyle indicatorStyle = const RSIStyle()})
-    : super(
-        name: 'relativeStrengthIndex',
-        shortName: 'RSI',
-        calcParams: const [6, 12, 24],
-        indicatorStyle: indicatorStyle,
-      ) {
+  RSIIndicator({
+    super.calcParams = const [14],
+    RSIStyle indicatorStyle = const RSIStyle(),
+  }) : super(
+         name: 'relativeStrengthIndex',
+         shortName: 'RSI',
+         indicatorStyle: indicatorStyle,
+       ) {
     _linePaint = Paint()
       ..isAntiAlias = true
       ..filterQuality = FilterQuality.high
@@ -49,43 +49,8 @@ class RSIIndicator extends SecondaryIndicator<MACDEntity, RSIStyle> {
     }
 
     return TextSpan(
-      text: "RSI(14):${formatNumber(entity.rsi!, precision)}",
+      text: "RSI(${calcParams.first}):${formatNumber(entity.rsi!, precision)}",
       style: getTextStyle(indicatorStyle.rsiColor),
-    );
-  }
-
-  @override
-  void drawVerticalText({
-    required Canvas canvas,
-    required TextStyle style,
-    required double maxValue,
-    required double minValue,
-    required int fixedLength,
-    required Rect chartRect,
-  }) {
-    final TextPainter maxTp = TextPainter(
-      text: TextSpan(
-        text: NumberUtil.formatFixed(maxValue, fixedLength) ?? '',
-        style: style,
-      ),
-      textDirection: TextDirection.ltr,
-    );
-    maxTp.layout();
-
-    final TextPainter minTp = TextPainter(
-      text: TextSpan(
-        text: NumberUtil.formatFixed(minValue, fixedLength) ?? '',
-        style: style,
-      ),
-      textDirection: TextDirection.ltr,
-    );
-    minTp.layout();
-
-    maxTp.paint(canvas, Offset(chartRect.width - maxTp.width, chartRect.top));
-
-    minTp.paint(
-      canvas,
-      Offset(chartRect.width - minTp.width, chartRect.bottom - minTp.height),
     );
   }
 
@@ -112,35 +77,50 @@ class RSIIndicator extends SecondaryIndicator<MACDEntity, RSIStyle> {
 
   @override
   void calc(List<KLineEntity> dataList) {
-    double? rsi;
-    double rsiABSEma = 0;
-    double rsiMaxEma = 0;
+    final int period = calcParams.isNotEmpty ? calcParams.first : 14;
+
+    double avgGain = 0;
+    double avgLoss = 0;
 
     for (int i = 0; i < dataList.length; i++) {
       final KLineEntity entity = dataList[i];
-      final double closePrice = entity.close;
 
       if (i == 0) {
-        rsi = 0;
-        rsiABSEma = 0;
-        rsiMaxEma = 0;
+        entity.rsi = null;
+        continue;
+      }
+
+      final double change = entity.close - dataList[i - 1].close;
+      final double gain = max(change, 0);
+      final double loss = max(-change, 0);
+
+      // Wilder smoothing: seed the averages with the SMA of the first
+      // `period` changes, then recurse with the standard smoothing factor.
+      if (i < period) {
+        avgGain += gain;
+        avgLoss += loss;
+        entity.rsi = null;
+        continue;
+      }
+
+      if (i == period) {
+        avgGain = (avgGain + gain) / period;
+        avgLoss = (avgLoss + loss) / period;
       } else {
-        double rMax = max(0, closePrice - dataList[i - 1].close.toDouble());
-        double rAbs = (closePrice - dataList[i - 1].close.toDouble()).abs();
-        rsiMaxEma = (rMax + (14 - 1) * rsiMaxEma) / 14;
-        rsiABSEma = (rAbs + (14 - 1) * rsiABSEma) / 14;
-        rsi = (rsiMaxEma / rsiABSEma) * 100;
+        avgGain = (avgGain * (period - 1) + gain) / period;
+        avgLoss = (avgLoss * (period - 1) + loss) / period;
       }
 
-      if (i < 13) {
-        rsi = null;
+      double rsi;
+      if (avgGain == 0 && avgLoss == 0) {
+        rsi = 50;
+      } else if (avgLoss == 0) {
+        rsi = 100;
+      } else {
+        rsi = 100 - 100 / (1 + avgGain / avgLoss);
       }
 
-      if (rsi != null && rsi.isNaN) {
-        rsi = null;
-      }
-
-      entity.rsi = rsi;
+      entity.rsi = rsi.isNaN ? null : rsi;
     }
   }
 }

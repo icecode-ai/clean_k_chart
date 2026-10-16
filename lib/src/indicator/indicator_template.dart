@@ -66,6 +66,9 @@ abstract class SecondaryIndicator<T, K> extends IndicatorTemplate<T, K> {
     required super.indicatorStyle,
   });
 
+  /// Draws the maximum and minimum value labels at the top right and bottom
+  /// right of [chartRect]. Subclasses with special labeling needs (KDJ, CCI)
+  /// override this.
   void drawVerticalText({
     required Canvas canvas,
     required TextStyle style,
@@ -73,5 +76,30 @@ abstract class SecondaryIndicator<T, K> extends IndicatorTemplate<T, K> {
     required double minValue,
     required int fixedLength,
     required Rect chartRect,
-  });
+  }) {
+    final TextPainter maxTp = TextPainter(
+      text: TextSpan(
+        text: NumberUtil.formatFixed(maxValue, fixedLength) ?? '',
+        style: style,
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    maxTp.layout();
+    maxTp.paint(canvas, Offset(chartRect.width - maxTp.width, chartRect.top));
+    maxTp.dispose();
+
+    final TextPainter minTp = TextPainter(
+      text: TextSpan(
+        text: NumberUtil.formatFixed(minValue, fixedLength) ?? '',
+        style: style,
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    minTp.layout();
+    minTp.paint(
+      canvas,
+      Offset(chartRect.width - minTp.width, chartRect.bottom - minTp.height),
+    );
+    minTp.dispose();
+  }
 }

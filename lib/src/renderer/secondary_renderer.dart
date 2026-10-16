@@ -64,6 +64,7 @@ class SecondaryRenderer extends BaseChartRenderer<MACDEntity> {
       canvas,
       Offset(x, chartRect.top - topPadding + chartStyle.indicatorTopMargin),
     );
+    tp.dispose();
   }
 
   @override

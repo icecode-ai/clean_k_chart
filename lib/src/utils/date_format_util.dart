@@ -1,3 +1,7 @@
+// The constant names intentionally mirror their format tokens (`MM`, `HH`,
+// `WW`, ...) instead of following lowerCamelCase.
+// ignore_for_file: constant_identifier_names
+
 /// Outputs year as four digits
 ///
 /// Example:
@@ -72,9 +76,9 @@ const String w = 'w';
 /// Outputs week in year as two digits
 ///
 /// Example:
-///     formatDate(DateTime(1989, 12, 31), [W]);
+///     formatDate(DateTime(1989, 12, 31), [WW]);
 ///     // => 53
-///     formatDate(DateTime(1989, 2, 21), [W]);
+///     formatDate(DateTime(1989, 2, 21), [WW]);
 ///     // => 08
 const String WW = 'WW';
 
@@ -99,14 +103,14 @@ const String DD = 'DD';
 ///     // => sun
 const String D = 'D';
 
-/// Outputs hour (0 - 11) as two digits
+/// Outputs hour (1 - 12) as two digits
 ///
 /// Example:
 ///     formatDate(DateTime(1989, 02, 1, 15), [hh]);
 ///     // => 03
 const String hh = 'hh';
 
-/// Outputs hour (0 - 11) compactly
+/// Outputs hour (1 - 12) compactly
 ///
 /// Example:
 ///     formatDate(DateTime(1989, 02, 1, 15), [h]);
@@ -192,7 +196,7 @@ const String S = 'S';
 ///     // => 009
 const String uuu = 'uuu';
 
-/// Outputs millisecond compactly
+/// Outputs microsecond compactly
 ///
 /// Example:
 ///     formatDate(DateTime(1989, 02, 1, 15, 40, 10, 0, 999), [u]);
@@ -274,9 +278,9 @@ String dateFormat(DateTime date, List<String> formats) {
     } else if (format == SSS) {
       sb.write(_digits(date.millisecond, 3));
     } else if (format == S) {
-      sb.write(date.second);
+      sb.write(date.millisecond);
     } else if (format == uuu) {
-      sb.write(_digits(date.microsecond, 2));
+      sb.write(_digits(date.microsecond, 3));
     } else if (format == u) {
       sb.write(date.microsecond);
     } else if (format == z) {
@@ -311,7 +315,7 @@ String _digits(int value, int length) {
   return ret;
 }
 
-const List<String> monthShort = const <String>[
+const List<String> monthShort = <String>[
   'Jan',
   'Feb',
   'Mar',
@@ -326,7 +330,7 @@ const List<String> monthShort = const <String>[
   'Dec',
 ];
 
-const List<String> monthLong = const <String>[
+const List<String> monthLong = <String>[
   'January',
   'February',
   'March',
@@ -341,11 +345,11 @@ const List<String> monthLong = const <String>[
   'December',
 ];
 
-const List<String> dayShort = const [
+const List<String> dayShort = [
   'Mon',
   'Tue',
   'Wed',
-  'Thur',
+  'Thu',
   'Fri',
   'Sat',
   'Sun',
@@ -361,5 +365,9 @@ const List<String> dayLong = [
   'Sunday',
 ];
 
+/// Zero-based day of the year (Jan 1st => 0). Computed in UTC so the result
+/// is not shifted by DST transitions.
 int dayInYear(DateTime date) =>
-    date.difference(DateTime(date.year, 1, 1)).inDays;
+    DateTime.utc(date.year, date.month, date.day)
+        .difference(DateTime.utc(date.year))
+        .inDays;

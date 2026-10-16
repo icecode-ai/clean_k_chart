@@ -10,13 +10,14 @@ import 'package:flutter/painting.dart';
 class KDJIndicator extends SecondaryIndicator<MACDEntity, KDJStyle> {
   late final Paint _linePaint;
 
-  KDJIndicator({KDJStyle indicatorStyle = const KDJStyle()})
-    : super(
-        name: 'stoch',
-        shortName: 'KDJ',
-        calcParams: const [], //[9, 3, 3], [9, 1, 3],
-        indicatorStyle: indicatorStyle,
-      ) {
+  KDJIndicator({
+    super.calcParams = const [9, 3, 3],
+    KDJStyle indicatorStyle = const KDJStyle(),
+  }) : super(
+         name: 'stoch',
+         shortName: 'KDJ',
+         indicatorStyle: indicatorStyle,
+       ) {
     _linePaint = Paint()
       ..isAntiAlias = true
       ..filterQuality = FilterQuality.high
@@ -52,7 +53,7 @@ class KDJIndicator extends SecondaryIndicator<MACDEntity, KDJStyle> {
     return TextSpan(
       children: [
         TextSpan(
-          text: "KDJ(9,1,3) ",
+          text: "KDJ(${calcParams.join(',')}) ",
           style: getTextStyle(chartColors.defaultTextColor),
         ),
         if (entity.k != null && entity.k != 0)
@@ -84,7 +85,11 @@ class KDJIndicator extends SecondaryIndicator<MACDEntity, KDJStyle> {
     required Rect chartRect,
   }) {
     final List<int> rangeValue = [80, 20];
-    final spaceRange = maxValue - minValue;
+    final double spaceRange = maxValue - minValue;
+
+    if (spaceRange <= 0) {
+      return;
+    }
 
     for (int i = 0; i < rangeValue.length; ++i) {
       final value = rangeValue[i];
@@ -98,7 +103,7 @@ class KDJIndicator extends SecondaryIndicator<MACDEntity, KDJStyle> {
       );
       tp.layout();
 
-      final ratio = (value - minValue) / spaceRange;
+      final double ratio = (value - minValue) / spaceRange;
       final x = chartRect.width - tp.width;
       final y = chartRect.bottom - ratio * chartRect.height - tp.height / 2;
 
@@ -106,6 +111,7 @@ class KDJIndicator extends SecondaryIndicator<MACDEntity, KDJStyle> {
         canvas,
         Offset(x, y.clamp(chartRect.top, chartRect.bottom - tp.height)),
       );
+      tp.dispose();
     }
   }
 
@@ -127,7 +133,7 @@ class KDJIndicator extends SecondaryIndicator<MACDEntity, KDJStyle> {
       );
     }
 
-    if (curPoint.d != null || lastPoint.d != null) {
+    if (curPoint.d != null && lastPoint.d != null) {
       canvas.drawLine(
         Offset(curX, getY(curPoint.d!)),
         Offset(lastX, getY(lastPoint.d!)),
@@ -135,7 +141,7 @@ class KDJIndicator extends SecondaryIndicator<MACDEntity, KDJStyle> {
       );
     }
 
-    if (curPoint.j != null || lastPoint.j != null) {
+    if (curPoint.j != null && lastPoint.j != null) {
       canvas.drawLine(
         Offset(curX, getY(curPoint.j!)),
         Offset(lastX, getY(lastPoint.j!)),
@@ -146,17 +152,24 @@ class KDJIndicator extends SecondaryIndicator<MACDEntity, KDJStyle> {
 
   @override
   void calc(List<KLineEntity> dataList) {
+    if (dataList.isEmpty) {
+      return;
+    }
+
+    final int period = calcParams.isNotEmpty ? calcParams[0] : 9;
+    final int kSmooth = calcParams.length > 1 ? calcParams[1] : 3;
+    final int dSmooth = calcParams.length > 2 ? calcParams[2] : 3;
+
     var preK = 50.0;
     var preD = 50.0;
 
-    final tmp = dataList.first;
-    tmp.k = preK;
-    tmp.d = preD;
-    tmp.j = 50.0;
+    dataList[0].k = preK;
+    dataList[0].d = preD;
+    dataList[0].j = 3 * preK - 2 * preD;
 
     for (int i = 1; i < dataList.length; i++) {
       final entity = dataList[i];
-      final n = max(0, i - 8);
+      final n = max(0, i - period + 1);
 
       var low = entity.low;
       var high = entity.high;
@@ -176,8 +189,8 @@ class KDJIndicator extends SecondaryIndicator<MACDEntity, KDJStyle> {
       var rsv = (cur - low) * 100.0 / (high - low);
       rsv = rsv.isNaN ? 0 : rsv;
 
-      final k = (2 * preK + rsv) / 3.0;
-      final d = (2 * preD + k) / 3.0;
+      final k = ((kSmooth - 1) * preK + rsv) / kSmooth;
+      final d = ((dSmooth - 1) * preD + k) / dSmooth;
       final j = 3 * k - 2 * d;
 
       preK = k;

@@ -12,13 +12,14 @@ class BOLLIndicator extends MainIndicator<CandleEntity, BOLLStyle> {
   late final Paint _linePaint;
   late final Paint _fillPaint;
 
-  BOLLIndicator({BOLLStyle indicatorStyle = const BOLLStyle()})
-    : super(
-        name: 'bollingerBands',
-        shortName: 'BOLL',
-        calcParams: const [20, 2],
-        indicatorStyle: indicatorStyle,
-      ) {
+  BOLLIndicator({
+    super.calcParams = const [20, 2],
+    BOLLStyle indicatorStyle = const BOLLStyle(),
+  }) : super(
+         name: 'bollingerBands',
+         shortName: 'BOLL',
+         indicatorStyle: indicatorStyle,
+       ) {
     _linePaint = Paint()
       ..isAntiAlias = true
       ..filterQuality = FilterQuality.high
@@ -144,53 +145,48 @@ class BOLLIndicator extends MainIndicator<CandleEntity, BOLLStyle> {
     }
   }
 
+  /// Params: [period, deviation] e.g. [20, 2] means a 20-period SMA with the
+  /// bands placed `2` population standard deviations from it.
   @override
   void calc(List<KLineEntity> dataList) {
-    final int n = calcParams[0];
-    final int k = calcParams[1];
+    final int n = calcParams.isNotEmpty ? calcParams[0] : 20;
+    final double k = (calcParams.length > 1 ? calcParams[1] : 2).toDouble();
 
-    _calcBOLLMA(n, dataList);
+    if (n <= 0 || dataList.isEmpty) {
+      return;
+    }
+
+    double closeSum = 0;
+    double closeSquareSum = 0;
 
     for (int i = 0; i < dataList.length; i++) {
-      final KLineEntity entity = dataList[i];
+      final double close = dataList[i].close;
+      closeSum += close;
+      closeSquareSum += close * close;
+
+      if (i < n - 1) {
+        continue;
+      }
 
       if (i >= n) {
-        double md = 0;
-
-        for (int j = i - n + 1; j <= i; j++) {
-          double c = dataList[j].close;
-          double m = entity.boll!.bollMa!;
-          double value = c - m;
-          md += value * value;
-        }
-
-        md = md / (n - 1);
-        md = sqrt(md);
-
-        entity.boll!.mid = entity.boll!.bollMa!;
-        entity.boll!.up = entity.boll!.mid! + k * md;
-        entity.boll!.dn = entity.boll!.mid! - k * md;
+        final double ago = dataList[i - n].close;
+        closeSum -= ago;
+        closeSquareSum -= ago * ago;
       }
-    }
-  }
 
-  void _calcBOLLMA(int day, List<KLineEntity> dataList) {
-    double ma = 0;
+      final double ma = closeSum / n;
 
-    for (int i = 0; i < dataList.length; i++) {
-      final KLineEntity entity = dataList[i];
+      // Population standard deviation of the closes in the window. The rolling
+      // sums keep this O(n) overall; clamp against tiny negative values caused
+      // by floating point cancellation.
+      final double variance = closeSquareSum / n - ma * ma;
+      final double md = variance > 0 ? sqrt(variance) : 0;
 
-      ma += entity.close;
-      entity.boll = BollEntity();
-
-      if (i == day - 1) {
-        entity.boll!.bollMa = ma / day;
-      } else if (i >= day) {
-        ma -= dataList[i - day].close;
-        entity.boll!.bollMa = ma / day;
-      } else {
-        entity.boll!.bollMa = null;
-      }
+      final boll = dataList[i].boll = BollEntity();
+      boll.bollMa = ma;
+      boll.mid = ma;
+      boll.up = ma + k * md;
+      boll.dn = ma - k * md;
     }
   }
 }

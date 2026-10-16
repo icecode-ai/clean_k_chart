@@ -7,14 +7,16 @@ import 'package:clean_k_chart/src/renderer/base_dimension.dart';
 import 'package:clean_k_chart/src/renderer/chart_painter.dart';
 import 'package:clean_k_chart/src/renderer/main_renderer.dart';
 import 'package:clean_k_chart/src/styles/k_chart_style.dart';
+import 'package:clean_k_chart/src/utils/data_util.dart';
 import 'package:clean_k_chart/src/utils/date_format_util.dart';
 import 'package:flutter/widgets.dart';
 
 typedef WidgetDetailBuilder = Widget Function(KLineEntity entity);
 
+/// Common date formats accepted by [KChartStyle.dateTimeFormat].
 class TimeFormat {
-  static const List<String> YEAR_MONTH_DAY = [yyyy, '-', mm, '-', dd];
-  static const List<String> YEAR_MONTH_DAY_WITH_HOUR = [
+  static const List<String> yearMonthDay = [yyyy, '-', mm, '-', dd];
+  static const List<String> yearMonthDayWithHour = [
     yyyy,
     '-',
     mm,
@@ -41,8 +43,6 @@ class KChartWidget extends StatefulWidget {
   final bool hideGrid;
   final bool showNowPrice;
   final bool showInfoDialog;
-  final bool materialInfoDialog;
-  final List<String> timeFormat;
   final double mBaseHeight;
   final double? mSecondaryHeight;
 
@@ -71,15 +71,12 @@ class KChartWidget extends StatefulWidget {
     this.xFrontPadding = 0,
     this.mainIndicators = const [],
     this.secondaryIndicators = const [],
-    // this.onSecondaryTap,
     this.volHidden = false,
     this.isLine = false,
     this.isTapShowInfoDialog = false,
     this.hideGrid = true,
     this.showNowPrice = true,
     this.showInfoDialog = true,
-    this.materialInfoDialog = true,
-    this.timeFormat = TimeFormat.YEAR_MONTH_DAY,
     this.onLoadMore,
     this.fixedLength = 2,
     this.flingTime = 600,
@@ -103,24 +100,28 @@ class _KChartWidgetState extends State<KChartWidget>
   AnimationController? _controller;
   Animation<double>? aniX;
 
-  // For TrendLine
-  List<TrendLine> lines = [];
-  double? changeinXposition;
-  double? changeinYposition;
-  double mSelectY = 0.0;
-  bool waitingForOtherPairofCords = false;
-  bool enableCordRecord = false;
+  /// The painter of the latest frame. Kept so gesture handlers can read
+  /// per-instance values such as [ChartPainter.maxScrollX].
+  ChartPainter? _painter;
 
-  double getMinScrollX() {
-    return mScaleX;
-  }
+  /// Last info window pushed to [mInfoWindowStream]. Used to drop duplicate
+  /// notifications produced during painting, which would otherwise trigger an
+  /// endless repaint loop while the selection stays on the same candle.
+  InfoWindowEntity? _lastInfoWindow;
+
+  /// Data list the indicators were last calculated for. `calculateAll` mutates
+  /// the entities in place, so it only has to run when the data (or the
+  /// selected indicators) actually change.
+  List<KLineEntity>? _calculatedDatas;
+  int _calculatedDataLength = -1;
+  List<MainIndicator>? _calculatedMainIndicators;
+  List<SecondaryIndicator>? _calculatedSecondaryIndicators;
 
   double _lastScale = 0.5;
   bool isScale = false, isDrag = false, isLongPress = false, isOnTap = false;
 
   @override
   void dispose() {
-    mInfoWindowStream.sink.close();
     mInfoWindowStream.close();
     _controller?.dispose();
 
@@ -134,6 +135,8 @@ class _KChartWidgetState extends State<KChartWidget>
       mScaleX = 0.5;
     }
 
+    _calculateIndicatorsIfNeeded();
+
     final BaseDimension baseDimension = BaseDimension(
       mBaseHeight: widget.mBaseHeight,
       mSecondaryHeight: widget.mSecondaryHeight ?? widget.mBaseHeight * .2,
@@ -146,13 +149,13 @@ class _KChartWidgetState extends State<KChartWidget>
       widget.chartStyle,
       widget.chartColors,
       baseDimension: baseDimension,
-      sink: mInfoWindowStream.sink,
+      onInfoWindow: _pushInfoWindow,
       xFrontPadding: widget.xFrontPadding,
       datas: widget.datas,
       scaleX: mScaleX,
       scrollX: mScrollX,
       selectX: mSelectX,
-      isLongPass: isLongPress,
+      isLongPress: isLongPress,
       isOnTap: isOnTap,
       isTapShowInfoDialog: widget.isTapShowInfoDialog,
       mainIndicators: widget.mainIndicators,
@@ -164,6 +167,7 @@ class _KChartWidgetState extends State<KChartWidget>
       fixedLength: widget.fixedLength,
       verticalTextAlignment: widget.verticalTextAlignment,
     );
+    _painter = painter;
 
     return GestureDetector(
       onTapUp: (details) {
@@ -185,7 +189,7 @@ class _KChartWidgetState extends State<KChartWidget>
       onHorizontalDragUpdate: (details) {
         if (isScale || isLongPress) return;
         mScrollX = ((details.primaryDelta ?? 0) / mScaleX + mScrollX)
-            .clamp(0.0, ChartPainter.maxScrollX)
+            .clamp(0.0, painter.maxScrollX)
             .toDouble();
         notifyChanged();
       },
@@ -210,26 +214,22 @@ class _KChartWidgetState extends State<KChartWidget>
         isOnTap = false;
         isLongPress = true;
 
-        if ((mSelectX != details.localPosition.dx ||
-            mSelectY != details.globalPosition.dy)) {
+        if (mSelectX != details.localPosition.dx) {
           mSelectX = details.localPosition.dx;
 
           notifyChanged();
         }
       },
       onLongPressMoveUpdate: (details) {
-        if ((mSelectX != details.localPosition.dx ||
-            mSelectY != details.globalPosition.dy)) {
+        if (mSelectX != details.localPosition.dx) {
           mSelectX = details.localPosition.dx;
-          mSelectY = details.localPosition.dy;
 
           notifyChanged();
         }
       },
       onLongPressEnd: (details) {
         isLongPress = false;
-        enableCordRecord = true;
-        mInfoWindowStream.sink.add(null);
+        _pushInfoWindow(null);
 
         notifyChanged();
       },
@@ -243,6 +243,58 @@ class _KChartWidgetState extends State<KChartWidget>
         ],
       ),
     );
+  }
+
+  /// Calculates indicator values for [KChartWidget.datas] when the data list
+  /// or the indicator configuration changed.
+  ///
+  /// [DataUtil.calculateAll] writes its results back into the entities, so
+  /// repeated runs are idempotent.
+  void _calculateIndicatorsIfNeeded() {
+    final datas = widget.datas;
+    if (datas == null || datas.isEmpty) {
+      return;
+    }
+
+    final bool dataChanged =
+        !identical(datas, _calculatedDatas) ||
+        datas.length != _calculatedDataLength;
+    final bool indicatorsChanged =
+        !identical(widget.mainIndicators, _calculatedMainIndicators) ||
+        !identical(widget.secondaryIndicators, _calculatedSecondaryIndicators);
+
+    if (!dataChanged && !indicatorsChanged) {
+      return;
+    }
+
+    _calculatedDatas = datas;
+    _calculatedDataLength = datas.length;
+    _calculatedMainIndicators = widget.mainIndicators;
+    _calculatedSecondaryIndicators = widget.secondaryIndicators;
+
+    DataUtil.calculateAll(
+      datas,
+      widget.mainIndicators,
+      widget.secondaryIndicators,
+    );
+  }
+
+  /// Forwards [info] to the info dialog stream unless it is identical to the
+  /// previously pushed value.
+  void _pushInfoWindow(InfoWindowEntity? info) {
+    final InfoWindowEntity? last = _lastInfoWindow;
+    if (last == info) {
+      return;
+    }
+
+    if (last != null && info != null && last.isLeft == info.isLeft) {
+      if (identical(last.kLineEntity, info.kLineEntity)) {
+        return;
+      }
+    }
+
+    _lastInfoWindow = info;
+    mInfoWindowStream.sink.add(info);
   }
 
   void _stopAnimation({bool needNotify = true}) {
@@ -266,16 +318,18 @@ class _KChartWidgetState extends State<KChartWidget>
   }
 
   void _onFling(double x) {
+    _controller?.dispose();
     _controller = AnimationController(
       duration: Duration(milliseconds: widget.flingTime),
       vsync: this,
     );
 
-    aniX = null;
-    aniX = Tween<double>(begin: mScrollX, end: x * widget.flingRatio + mScrollX)
-        .animate(
-          CurvedAnimation(parent: _controller!.view, curve: widget.flingCurve),
-        );
+    aniX = Tween<double>(
+      begin: mScrollX,
+      end: x * widget.flingRatio + mScrollX,
+    ).animate(
+      CurvedAnimation(parent: _controller!.view, curve: widget.flingCurve),
+    );
     aniX!.addListener(() {
       mScrollX = aniX!.value;
       if (mScrollX <= 0) {
@@ -284,8 +338,8 @@ class _KChartWidgetState extends State<KChartWidget>
           widget.onLoadMore!(true);
         }
         _stopAnimation();
-      } else if (mScrollX >= ChartPainter.maxScrollX) {
-        mScrollX = ChartPainter.maxScrollX;
+      } else if (mScrollX >= (_painter?.maxScrollX ?? 0)) {
+        mScrollX = _painter?.maxScrollX ?? 0;
         if (widget.onLoadMore != null) {
           widget.onLoadMore!(false);
         }
@@ -305,8 +359,6 @@ class _KChartWidgetState extends State<KChartWidget>
   }
 
   void notifyChanged() => setState(() {});
-
-  late List<String> infos;
 
   Widget _buildInfoDialog() {
     return StreamBuilder<InfoWindowEntity?>(

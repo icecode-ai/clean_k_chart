@@ -9,7 +9,8 @@ import 'package:flutter/rendering.dart';
 
 /// BaseChartPainter
 abstract class BaseChartPainter extends CustomPainter {
-  static double maxScrollX = 0.0;
+  /// Maximum scroll offset of this chart instance.
+  double maxScrollX = 0.0;
 
   List<KLineEntity>? datas;
 
@@ -23,8 +24,6 @@ abstract class BaseChartPainter extends CustomPainter {
   bool isLongPress = false;
   bool isOnTap;
   bool isLine;
-
-  late Rect mMainLabelRect;
 
   /// Rectangle box of main chart
   late Rect mMainRect;

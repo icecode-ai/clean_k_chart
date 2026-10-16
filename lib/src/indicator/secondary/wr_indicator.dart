@@ -5,19 +5,19 @@ import 'package:clean_k_chart/src/entity/macd_entity.dart';
 import 'package:clean_k_chart/src/indicator/indicator_style.dart';
 import 'package:clean_k_chart/src/indicator/indicator_template.dart';
 import 'package:clean_k_chart/src/styles/k_chart_style.dart';
-import 'package:clean_k_chart/src/utils/number_util.dart';
 import 'package:flutter/painting.dart';
 
 class WRIndicator extends SecondaryIndicator<MACDEntity, WRStyle> {
   late final Paint _linePaint;
 
-  WRIndicator({WRStyle indicatorStyle = const WRStyle()})
-    : super(
-        name: 'volumeRatio',
-        shortName: 'WR',
-        calcParams: const [26, 6],
-        indicatorStyle: indicatorStyle,
-      ) {
+  WRIndicator({
+    super.calcParams = const [14],
+    WRStyle indicatorStyle = const WRStyle(),
+  }) : super(
+         name: 'williamsRate',
+         shortName: 'WR',
+         indicatorStyle: indicatorStyle,
+       ) {
     _linePaint = Paint()
       ..isAntiAlias = true
       ..filterQuality = FilterQuality.high
@@ -44,43 +44,8 @@ class WRIndicator extends SecondaryIndicator<MACDEntity, WRStyle> {
     }
 
     return TextSpan(
-      text: "WR(14):${formatNumber(entity.r!, precision)}",
+      text: "WR(${calcParams.first}):${formatNumber(entity.r!, precision)}",
       style: getTextStyle(indicatorStyle.wrColor),
-    );
-  }
-
-  @override
-  void drawVerticalText({
-    required Canvas canvas,
-    required TextStyle style,
-    required double maxValue,
-    required double minValue,
-    required int fixedLength,
-    required Rect chartRect,
-  }) {
-    final TextPainter maxTp = TextPainter(
-      text: TextSpan(
-        text: NumberUtil.formatFixed(maxValue, fixedLength) ?? '',
-        style: style,
-      ),
-      textDirection: TextDirection.ltr,
-    );
-    maxTp.layout();
-
-    final TextPainter minTp = TextPainter(
-      text: TextSpan(
-        text: NumberUtil.formatFixed(minValue, fixedLength) ?? '',
-        style: style,
-      ),
-      textDirection: TextDirection.ltr,
-    );
-    minTp.layout();
-
-    maxTp.paint(canvas, Offset(chartRect.width - maxTp.width, chartRect.top));
-
-    minTp.paint(
-      canvas,
-      Offset(chartRect.width - minTp.width, chartRect.bottom - minTp.height),
     );
   }
 
@@ -107,33 +72,27 @@ class WRIndicator extends SecondaryIndicator<MACDEntity, WRStyle> {
 
   @override
   void calc(List<KLineEntity> dataList) {
-    double r;
+    final int period = calcParams.isNotEmpty ? calcParams.first : 14;
+
     for (int i = 0; i < dataList.length; i++) {
       final KLineEntity entity = dataList[i];
 
-      int startIndex = i - 14;
-      if (startIndex < 0) {
-        startIndex = 0;
+      // Warm-up: not enough data for a full window.
+      if (i < period - 1) {
+        entity.r = null;
+        continue;
       }
 
-      double max14 = double.minPositive;
-      double min14 = double.maxFinite;
+      double maxHigh = -double.infinity;
+      double minLow = double.infinity;
 
-      for (int index = startIndex; index <= i; index++) {
-        max14 = max(max14, dataList[index].high);
-        min14 = min(min14, dataList[index].low);
+      for (int index = i - period + 1; index <= i; index++) {
+        maxHigh = max(maxHigh, dataList[index].high);
+        minLow = min(minLow, dataList[index].low);
       }
 
-      if (i < 13) {
-        entity.r = -10;
-      } else {
-        r = -100 * (max14 - dataList[i].close) / (max14 - min14);
-        if (r.isNaN) {
-          entity.r = null;
-        } else {
-          entity.r = r;
-        }
-      }
+      final double range = maxHigh - minLow;
+      entity.r = range == 0 ? null : -100 * (maxHigh - dataList[i].close) / range;
     }
   }
 }

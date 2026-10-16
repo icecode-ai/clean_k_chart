@@ -1,13 +1,27 @@
-import 'package:clean_k_chart/src/entity/k_entity.dart';
+import 'package:clean_k_chart/src/entity/candle_entity.dart';
+import 'package:clean_k_chart/src/entity/cci_entity.dart';
+import 'package:clean_k_chart/src/entity/kdj_entity.dart';
+import 'package:clean_k_chart/src/entity/macd_entity.dart';
+import 'package:clean_k_chart/src/entity/rsi_entity.dart';
+import 'package:clean_k_chart/src/entity/rw_entity.dart';
+import 'package:clean_k_chart/src/entity/volume_entity.dart';
 import 'package:clean_k_chart/src/extension/map_extension.dart';
 
-class KLineEntity extends KEntity {
+/// A candle with all indicator values attached.
+///
+/// The indicator mixins provide the storage for open/high/low/close, volume
+/// and every calculated indicator value; [KLineEntity] fills them in its
+/// constructors.
+class KLineEntity
+    with
+        CandleEntity,
+        VolumeEntity,
+        KDJEntity,
+        RSIEntity,
+        WREntity,
+        CCIEntity,
+        MACDEntity {
   final int time;
-  final double open;
-  final double close;
-  final double high;
-  final double low;
-  final double vol;
 
   double? amount;
   double? change;
@@ -19,11 +33,11 @@ class KLineEntity extends KEntity {
 
   KLineEntity.fromCustom({
     required this.time,
-    required this.open,
-    required this.close,
-    required this.high,
-    required this.low,
-    required this.vol,
+    required double open,
+    required double close,
+    required double high,
+    required double low,
+    required double vol,
     this.amount,
     this.change,
     this.ratio,
@@ -31,22 +45,28 @@ class KLineEntity extends KEntity {
     this.prevPrice,
     this.amplitude,
     this.openPremiumRate,
-  });
+  }) {
+    this.open = open;
+    this.close = close;
+    this.high = high;
+    this.low = low;
+    this.vol = vol;
+  }
 
-  KLineEntity.fromJson(Map<String, dynamic> json)
-    : time = json.gInt('time'),
-      open = json.gDouble('open'),
-      close = json.gDouble('close'),
-      high = json.gDouble('high'),
-      low = json.gDouble('low'),
-      vol = json.gDouble('vol'),
-      amount = json.gDouble('amount'),
-      change = json.gDouble('change'),
-      ratio = json.gDouble('ratio'),
-      toRate = json.gDouble('toRate'),
-      prevPrice = json.gDouble('prevPrice'),
-      amplitude = json.gDouble('amplitude'),
-      openPremiumRate = json.gDouble('openPremiumRate');
+  KLineEntity.fromJson(Map<String, dynamic> json) : time = json.gInt('time') {
+    open = json.gDouble('open');
+    close = json.gDouble('close');
+    high = json.gDouble('high');
+    low = json.gDouble('low');
+    vol = json.gDouble('vol');
+    amount = json.gDouble('amount');
+    change = json.gDouble('change');
+    ratio = json.gDouble('ratio');
+    toRate = json.gDouble('toRate');
+    prevPrice = json.gDouble('prevPrice');
+    amplitude = json.gDouble('amplitude');
+    openPremiumRate = json.gDouble('openPremiumRate');
+  }
 
   Map<String, dynamic> toJson() => {
     'time': time,

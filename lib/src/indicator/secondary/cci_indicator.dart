@@ -11,13 +11,14 @@ import 'package:flutter/painting.dart';
 class CCIIndicator extends SecondaryIndicator<MACDEntity, CCIStyle> {
   late final Paint _linePaint;
 
-  CCIIndicator({CCIStyle indicatorStyle = const CCIStyle()})
-    : super(
-        name: 'commodityChannelIndex',
-        shortName: 'CCI',
-        calcParams: const [90],
-        indicatorStyle: indicatorStyle,
-      ) {
+  CCIIndicator({
+    super.calcParams = const [20],
+    CCIStyle indicatorStyle = const CCIStyle(),
+  }) : super(
+         name: 'commodityChannelIndex',
+         shortName: 'CCI',
+         indicatorStyle: indicatorStyle,
+       ) {
     _linePaint = Paint()
       ..isAntiAlias = true
       ..filterQuality = FilterQuality.high
@@ -89,6 +90,7 @@ class CCIIndicator extends SecondaryIndicator<MACDEntity, CCIStyle> {
     );
     maxTp.layout();
     maxTp.paint(canvas, Offset(chartRect.width - maxTp.width, chartRect.top));
+    maxTp.dispose();
 
     /// min
     TextPainter minTp = TextPainter(
@@ -108,6 +110,7 @@ class CCIIndicator extends SecondaryIndicator<MACDEntity, CCIStyle> {
       canvas,
       Offset(chartRect.width - minTp.width, chartRect.bottom - minTp.height),
     );
+    minTp.dispose();
   }
 
   @override
@@ -133,41 +136,35 @@ class CCIIndicator extends SecondaryIndicator<MACDEntity, CCIStyle> {
 
   @override
   void calc(List<KLineEntity> dataList) {
-    final periods = calcParams.first;
-    final p = periods - 1;
+    final int periods = calcParams.isNotEmpty ? calcParams.first : 90;
+    final int warmUpEnd = periods - 1;
 
     double tpSum = 0;
 
-    final tpList = [];
+    final List<double> tpList = <double>[];
 
     for (int i = 0; i < dataList.length; i++) {
       final kline = dataList[i];
       kline.cci = null;
 
-      final tp = (kline.high + kline.low + kline.close) / 3;
+      final double tp = (kline.high + kline.low + kline.close) / 3;
 
       tpSum += tp;
-
       tpList.add(tp);
 
-      if (i >= p) {
-        final maTp = tpSum / periods;
-        final sliceTpList = tpList.sublist(i - p, i + 1);
-        final sum = sliceTpList.fold(0.0, (s, tp) {
-          s += (tp - maTp).abs();
-          return s;
-        });
-        final md = sum / periods;
+      if (i >= warmUpEnd) {
+        final double maTp = tpSum / periods;
 
-        kline.cci = md != 0 ? ((tp - maTp) / md / 0.015) : 0;
+        // Mean absolute deviation over the current window.
+        double absDeviationSum = 0;
+        for (int j = i - warmUpEnd; j <= i; j++) {
+          absDeviationSum += (tpList[j] - maTp).abs();
+        }
+        final double md = absDeviationSum / periods;
 
-        final agoTp =
-            (dataList[i - p].high +
-                dataList[i - p].low +
-                dataList[i - p].close) /
-            3;
+        kline.cci = md != 0 ? ((tp - maTp) / md) / 0.015 : 0;
 
-        tpSum -= agoTp;
+        tpSum -= tpList[i - warmUpEnd];
       }
     }
   }

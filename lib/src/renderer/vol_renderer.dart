@@ -108,6 +108,7 @@ class VolRenderer extends BaseChartRenderer<VolumeEntity> {
       canvas,
       Offset(x, chartRect.top - topPadding + chartStyle.indicatorTopMargin),
     );
+    tp.dispose();
   }
 
   @override
@@ -129,6 +130,7 @@ class VolRenderer extends BaseChartRenderer<VolumeEntity> {
         chartRect.top - topPadding + chartStyle.indicatorTopMargin,
       ),
     );
+    tp.dispose();
   }
 
   @override
