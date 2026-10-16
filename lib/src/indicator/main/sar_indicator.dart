@@ -174,10 +174,12 @@ class SARIndicator extends MainIndicator<CandleEntity, SARStyle> {
 
   double _highestHigh(List<KLineEntity> dataList, int i) {
     final int start = max(0, i - 2);
+
     double result = dataList[start].high;
     for (int j = start + 1; j < i; j++) {
       result = max(result, dataList[j].high);
     }
+
     return result;
   }
 }
