@@ -324,12 +324,10 @@ class _KChartWidgetState extends State<KChartWidget>
       vsync: this,
     );
 
-    aniX = Tween<double>(
-      begin: mScrollX,
-      end: x * widget.flingRatio + mScrollX,
-    ).animate(
-      CurvedAnimation(parent: _controller!.view, curve: widget.flingCurve),
-    );
+    aniX = Tween<double>(begin: mScrollX, end: x * widget.flingRatio + mScrollX)
+        .animate(
+          CurvedAnimation(parent: _controller!.view, curve: widget.flingCurve),
+        );
     aniX!.addListener(() {
       mScrollX = aniX!.value;
       if (mScrollX <= 0) {

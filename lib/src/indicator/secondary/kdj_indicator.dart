@@ -13,11 +13,7 @@ class KDJIndicator extends SecondaryIndicator<MACDEntity, KDJStyle> {
   KDJIndicator({
     super.calcParams = const [9, 3, 3],
     KDJStyle indicatorStyle = const KDJStyle(),
-  }) : super(
-         name: 'stoch',
-         shortName: 'KDJ',
-         indicatorStyle: indicatorStyle,
-       ) {
+  }) : super(name: 'stoch', shortName: 'KDJ', indicatorStyle: indicatorStyle) {
     _linePaint = Paint()
       ..isAntiAlias = true
       ..filterQuality = FilterQuality.high

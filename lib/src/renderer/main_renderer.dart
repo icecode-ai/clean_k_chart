@@ -325,11 +325,7 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
     }
 
     /// draw top grid
-    canvas.drawLine(
-      const Offset(0, 0),
-      Offset(chartRect.width, 0),
-      gridPaint,
-    );
+    canvas.drawLine(const Offset(0, 0), Offset(chartRect.width, 0), gridPaint);
 
     /// draw bottom grid
     canvas.drawLine(

@@ -427,10 +427,7 @@ class ChartPainter extends BaseChartPainter {
     final String text = alignLeft ? "── $formatted" : "$formatted ──";
 
     final TextPainter tp = getTextPainter(text, color);
-    tp.paint(
-      canvas,
-      Offset(alignLeft ? x : x - tp.width, y - tp.height / 2),
-    );
+    tp.paint(canvas, Offset(alignLeft ? x : x - tp.width, y - tp.height / 2));
     tp.dispose();
   }
 

@@ -345,15 +345,7 @@ const List<String> monthLong = <String>[
   'December',
 ];
 
-const List<String> dayShort = [
-  'Mon',
-  'Tue',
-  'Wed',
-  'Thu',
-  'Fri',
-  'Sat',
-  'Sun',
-];
+const List<String> dayShort = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 const List<String> dayLong = [
   'Monday',
@@ -367,7 +359,8 @@ const List<String> dayLong = [
 
 /// Zero-based day of the year (Jan 1st => 0). Computed in UTC so the result
 /// is not shifted by DST transitions.
-int dayInYear(DateTime date) =>
-    DateTime.utc(date.year, date.month, date.day)
-        .difference(DateTime.utc(date.year))
-        .inDays;
+int dayInYear(DateTime date) => DateTime.utc(
+  date.year,
+  date.month,
+  date.day,
+).difference(DateTime.utc(date.year)).inDays;

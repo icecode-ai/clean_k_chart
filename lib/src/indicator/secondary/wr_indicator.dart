@@ -92,7 +92,9 @@ class WRIndicator extends SecondaryIndicator<MACDEntity, WRStyle> {
       }
 
       final double range = maxHigh - minLow;
-      entity.r = range == 0 ? null : -100 * (maxHigh - dataList[i].close) / range;
+      entity.r = range == 0
+          ? null
+          : -100 * (maxHigh - dataList[i].close) / range;
     }
   }
 }
