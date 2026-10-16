@@ -22,7 +22,7 @@ Add the dependency to `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  clean_k_chart: ^0.0.2
+  clean_k_chart: ^1.0.0
 ```
 
 ## Usage
