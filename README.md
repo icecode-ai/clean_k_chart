@@ -1,12 +1,10 @@
 # clean_k_chart
 
+forked from [TrangLeQuynh/k_chart_plus](https://github.com/TrangLeQuynh/k_chart_plus)
+
 [![pub package](https://img.shields.io/pub/v/clean_k_chart.svg)](https://pub.dev/packages/clean_k_chart)
 
-A customizable K-line (candlestick) chart for Flutter, written in pure Flutter
-canvas code (no Material/Cupertino dependencies).
-
 ## Features
-
 - Candlestick and line (trend) charts
 - Main indicators: **MA / EMA / BOLL / SAR**
 - Secondary indicators: **MACD / KDJ / RSI / WR / CCI**
@@ -15,6 +13,7 @@ canvas code (no Material/Cupertino dependencies).
 - Max/min price markers, current-price dashed line
 - Pinch to scale, drag to scroll, fling with load-more callbacks
 - Fully customizable colors (`KChartColors`) and dimensions (`KChartStyle`)
+- no Material/Cupertino dependencies
 
 ## Getting started
 
