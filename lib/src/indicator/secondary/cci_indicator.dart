@@ -75,7 +75,7 @@ class CCIIndicator extends SecondaryIndicator<MACDEntity, CCIStyle> {
       jumpValue = 1;
     }
 
-    /// max
+    // max
     TextPainter maxTp = TextPainter(
       text: TextSpan(
         text:
@@ -92,7 +92,7 @@ class CCIIndicator extends SecondaryIndicator<MACDEntity, CCIStyle> {
     maxTp.paint(canvas, Offset(chartRect.width - maxTp.width, chartRect.top));
     maxTp.dispose();
 
-    /// min
+    // min
     TextPainter minTp = TextPainter(
       text: TextSpan(
         text:

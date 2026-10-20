@@ -104,7 +104,7 @@ class BOLLIndicator extends MainIndicator<CandleEntity, BOLLStyle> {
       positions.add(Offset(curX, getY(curPoint.boll!.up!)));
       positions.add(Offset(lastX, getY(lastPoint.boll!.up!)));
 
-      /// UB
+      // UB
       canvas.drawLine(
         positions[0],
         positions[1],
@@ -116,7 +116,7 @@ class BOLLIndicator extends MainIndicator<CandleEntity, BOLLStyle> {
       positions.add(Offset(lastX, getY(lastPoint.boll!.dn!)));
       positions.add(Offset(curX, getY(curPoint.boll!.dn!)));
 
-      /// LB
+      // LB
       canvas.drawLine(
         positions[2],
         positions[3],
@@ -136,7 +136,7 @@ class BOLLIndicator extends MainIndicator<CandleEntity, BOLLStyle> {
     }
 
     if (curPoint.boll!.mid != null && lastPoint.boll!.mid != null) {
-      /// BOLL
+      // BOLL
       canvas.drawLine(
         Offset(curX, getY(curPoint.boll!.mid!)),
         Offset(lastX, getY(lastPoint.boll!.mid!)),

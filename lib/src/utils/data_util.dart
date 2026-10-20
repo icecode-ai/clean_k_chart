@@ -16,12 +16,12 @@ class DataUtil {
     List<MainIndicator> mainLi,
     List<SecondaryIndicator> secondaryLi,
   ) {
-    /// calculate main state
+    // calculate main state
     for (var e in mainLi) {
       e.calc(dataList);
     }
 
-    /// calculate secondary state
+    // calculate secondary state
     for (var e in secondaryLi) {
       e.calc(dataList);
     }

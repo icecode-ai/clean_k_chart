@@ -165,10 +165,12 @@ class SARIndicator extends MainIndicator<CandleEntity, SARStyle> {
 
   double _lowestLow(List<KLineEntity> dataList, int i) {
     final int start = max(0, i - 2);
+
     double result = dataList[start].low;
     for (int j = start + 1; j < i; j++) {
       result = min(result, dataList[j].low);
     }
+
     return result;
   }
 

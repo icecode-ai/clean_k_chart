@@ -9,8 +9,8 @@ extension CanvasExtension on Canvas {
     double space = 3.0,
     double width = 4.0,
   ]) {
+    // draw vertical line
     if (begin.dx == end.dx) {
-      /// draw vertical line
       double startDy = begin.dy;
       double endDy = end.dy;
 
@@ -25,8 +25,8 @@ extension CanvasExtension on Canvas {
       }
     }
 
+    // draw horizontal line
     if (begin.dy == end.dy) {
-      /// draw horizontal line
       double startDx = begin.dx;
       double endDx = end.dx;
 

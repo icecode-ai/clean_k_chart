@@ -7,11 +7,6 @@ import 'package:clean_k_chart/src/entity/rw_entity.dart';
 import 'package:clean_k_chart/src/entity/volume_entity.dart';
 import 'package:clean_k_chart/src/extension/map_extension.dart';
 
-/// A candle with all indicator values attached.
-///
-/// The indicator mixins provide the storage for open/high/low/close, volume
-/// and every calculated indicator value; [KLineEntity] fills them in its
-/// constructors.
 class KLineEntity
     with
         CandleEntity,

@@ -35,6 +35,7 @@ abstract class BaseChartRenderer<T> {
     }
 
     scaleY = chartRect.height / (maxValue - minValue);
+
     gridPaint.color = gridColor;
   }
 

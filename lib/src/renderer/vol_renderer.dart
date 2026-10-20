@@ -143,7 +143,7 @@ class VolRenderer extends BaseChartRenderer<VolumeEntity> {
 
     final double columnSpace = chartRect.width / gridColumns;
     for (int i = 0; i <= columnSpace; i++) {
-      // vol垂直线
+      // vol line
       canvas.drawLine(
         Offset(columnSpace * i, chartRect.top - topPadding),
         Offset(columnSpace * i, chartRect.bottom),

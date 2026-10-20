@@ -17,7 +17,9 @@ typedef OnInfoWindowChanged = void Function(InfoWindowEntity? info);
 
 class ChartPainter extends BaseChartPainter {
   late BaseChartRenderer mMainRenderer;
+
   BaseChartRenderer? mVolRenderer;
+
   Set<BaseChartRenderer> mSecondaryRendererList = {};
 
   int fixedLength;
@@ -61,14 +63,17 @@ class ChartPainter extends BaseChartPainter {
       ..color = chartColors.crossColor
       ..strokeWidth = chartStyle.crossWidth
       ..isAntiAlias = true;
+
     selectPointPaint = Paint()
       ..isAntiAlias = true
       ..color = chartColors.selectFillColor;
+
     selectorBorderPaint = Paint()
       ..isAntiAlias = true
       ..strokeWidth = chartStyle.borderWidth
       ..style = PaintingStyle.stroke
       ..color = chartColors.selectBorderColor;
+
     nowPriceLinePaint = Paint()
       ..strokeWidth = chartStyle.nowPriceLineWidth
       ..isAntiAlias = true;
@@ -147,6 +152,7 @@ class ChartPainter extends BaseChartPainter {
   @override
   void drawBg(Canvas canvas, Size size) {
     final Paint mBgPaint = Paint()..color = chartColors.bgColor;
+
     final Rect mainRect = Rect.fromLTRB(
       0,
       0,
@@ -169,7 +175,8 @@ class ChartPainter extends BaseChartPainter {
 
     for (int i = 0; i < mSecondaryRectList.length; ++i) {
       Rect? mSecondaryRect = mSecondaryRectList[i].mRect;
-      Rect secondaryRect = Rect.fromLTRB(
+
+      final Rect secondaryRect = Rect.fromLTRB(
         0,
         mSecondaryRect.top - mChildPadding,
         mSecondaryRect.width,
@@ -225,7 +232,7 @@ class ChartPainter extends BaseChartPainter {
 
   @override
   void drawVerticalText(canvas) {
-    var textStyle = getTextStyle(chartColors.defaultTextColor);
+    final TextStyle textStyle = getTextStyle(chartColors.defaultTextColor);
     if (!hideGrid) {
       mMainRenderer.drawVerticalText(canvas, textStyle, mGridRows);
     }

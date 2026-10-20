@@ -39,7 +39,6 @@ abstract class IndicatorTemplate<T, K> {
 
   void calc(List<KLineEntity> dataList);
 
-  /// text format
   TextStyle getTextStyle(Color? color) {
     return TextStyle(fontSize: 10, color: color);
   }

@@ -1,30 +1,29 @@
 import 'package:clean_k_chart/src/indicator/indicator_template.dart';
 
-/// Base Dimension
 class BaseDimension {
-  // the height of base chart
+  /// the height of base chart
   late double _mBaseHeight;
 
-  // default: 0
-  // the height of volume chart
+  /// default: 0
+  /// the height of volume chart
   late double _mVolumeHeight;
 
-  // default: 0
-  // the height of a secondary chart
+  /// default: 0
+  /// the height of a secondary chart
   late double _mSecondaryHeight;
   late double _totalSecondaryHeight;
 
   final double _mLabelHeight = 12;
   double _totalLabelHeight = 12;
 
-  // total height of chart: _mBaseHeight + _mVolumeHeight + (_mSecondaryHeight * n)
-  // n : number of secondary charts
+  /// total height of chart: _mBaseHeight + _mVolumeHeight + (_mSecondaryHeight * n)
+  /// n : number of secondary charts
   double _mDisplayHeight = 0;
 
-  // getter the vol height
+  /// getter the vol height
   double get mVolumeHeight => _mVolumeHeight;
 
-  // getter the secondary height
+  /// getter the secondary height
   double get mSecondaryHeight => _mSecondaryHeight;
 
   double get totalSecondaryHeight => _totalSecondaryHeight;
@@ -33,14 +32,9 @@ class BaseDimension {
 
   double get totalLabelHeight => _totalLabelHeight;
 
-  // getter the total height
+  /// getter the total height
   double get mDisplayHeight => _mDisplayHeight;
 
-  /// constructor
-  ///
-  /// BaseDimension
-  /// set _mBaseHeight
-  /// compute value of _mVolumeHeight, _mSecondaryHeight, _mDisplayHeight
   BaseDimension({
     required double mBaseHeight,
     required double mSecondaryHeight,

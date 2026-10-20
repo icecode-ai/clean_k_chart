@@ -1,7 +1,3 @@
-// The constant names intentionally mirror their format tokens (`MM`, `HH`,
-// `WW`, ...) instead of following lowerCamelCase.
-// ignore_for_file: constant_identifier_names
-
 /// Outputs year as four digits
 ///
 /// Example:

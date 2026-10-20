@@ -14,7 +14,6 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
   List<MainIndicator> indicatorLi;
   bool isLine;
 
-  // 绘制的内容区域
   late Rect _contentRect;
   final double _contentPadding = 5.0;
   final KChartStyle chartStyle;
@@ -48,11 +47,13 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
       ) {
     mCandleWidth = chartStyle.candleWidth;
     mCandleLineWidth = chartStyle.candleLineWidth;
+
     mLinePaint = Paint()
       ..isAntiAlias = true
       ..style = PaintingStyle.stroke
       ..strokeWidth = mLineStrokeWidth
       ..color = chartColors.kLineColor;
+
     _contentRect = Rect.fromLTRB(
       chartRect.left,
       chartRect.top + _contentPadding,
@@ -76,7 +77,7 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
 
     double y = chartStyle.indicatorTopMargin;
     for (int i = 0; i < indicatorLi.length; ++i) {
-      TextSpan? span = indicatorLi[i].drawFigure(
+      final TextSpan? span = indicatorLi[i].drawFigure(
         data,
         fixedLength,
         chartColors,
@@ -92,7 +93,7 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
       tp.layout(maxWidth: chartRect.width - chartStyle.space);
 
       final double textHeight = tp.height;
-      Offset offset = Offset(x, y);
+      final Offset offset = Offset(x, y);
 
       canvas.drawRect(
         Rect.fromLTRB(
@@ -107,7 +108,8 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
       tp.paint(canvas, offset);
       tp.dispose();
 
-      y = y + textHeight + 2.0; // update y
+      // update y
+      y = y + textHeight + 2.0;
     }
   }
 
@@ -125,7 +127,7 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
     } else {
       drawCandle(curPoint, canvas, curX);
 
-      /// draw chart main state
+      // draw chart main state
       for (int i = 0; i < indicatorLi.length; ++i) {
         indicatorLi[i].drawChart(
           lastPoint,
@@ -146,7 +148,6 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
     ..style = PaintingStyle.fill
     ..isAntiAlias = true;
 
-  // 画折线图
   void drawPolyline(
     double lastPrice,
     double curPrice,
@@ -172,7 +173,6 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
       getY(curPrice),
     );
 
-    // 画阴影
     mLineFillShader ??=
         LinearGradient(
           begin: Alignment.topCenter,
@@ -190,7 +190,6 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
     mLineFillPaint.shader = mLineFillShader;
 
     mLineFillPath ??= Path();
-
     mLineFillPath!.moveTo(lastX, chartRect.height + chartRect.top);
     mLineFillPath!.lineTo(lastX, getY(lastPrice));
     mLineFillPath!.cubicTo(
@@ -217,17 +216,15 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
   }
 
   void drawCandle(CandleEntity curPoint, Canvas canvas, double curX) {
-    final high = getY(curPoint.high);
-    final low = getY(curPoint.low);
-    final close = getY(curPoint.close);
+    final double high = getY(curPoint.high);
+    final double low = getY(curPoint.low);
+    final double close = getY(curPoint.close);
 
-    var open = getY(curPoint.open);
-
+    double open = getY(curPoint.open);
     double r = mCandleWidth / 2;
     double lineR = mCandleLineWidth / 2;
 
     if (open >= close) {
-      // 实体高度>= CandleLineWidth
       if (open - close < mCandleLineWidth) {
         open = close + mCandleLineWidth;
       }
@@ -244,7 +241,6 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
         chartPaint,
       );
     } else if (close > open) {
-      // 实体高度>= CandleLineWidth
       if (close - open < mCandleLineWidth) {
         open = close - mCandleLineWidth;
       }
@@ -299,6 +295,7 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
           Offset(offsetX, rowSpace * i - tp.height + topPadding),
         );
       }
+
       tp.dispose();
     }
   }
@@ -324,10 +321,10 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
       );
     }
 
-    /// draw top grid
+    // draw top grid
     canvas.drawLine(const Offset(0, 0), Offset(chartRect.width, 0), gridPaint);
 
-    /// draw bottom grid
+    // draw bottom grid
     canvas.drawLine(
       Offset(0, chartRect.bottom + mBottomPadding),
       Offset(chartRect.width, chartRect.bottom + mBottomPadding),

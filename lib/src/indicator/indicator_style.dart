@@ -21,7 +21,6 @@ class MAStyle extends IndicatorStyle {
     ],
   });
 
-  /// get MA color via index
   Color getMAColor(int index) {
     if (index < 0) {
       throw RangeError.range(index, 0, maColors.length - 1);

@@ -1,14 +1,5 @@
 import 'dart:ui';
 
-/// KChartColors
-///
-/// Note:
-/// If you need to apply multi theme, you need to change at least the colors related to the text, border and background color
-/// Ex:
-/// Background: bgColor, selectFillColor
-/// Border
-/// Text
-///
 class KChartColors {
   /// the background color of base chart
   final Color bgColor;
@@ -56,13 +47,10 @@ class KChartColors {
   final Color maxColor;
   final Color minColor;
 
-  /// constructor chart color
   const KChartColors({
     this.bgColor = const Color(0xffffffff),
     this.kLineColor = const Color(0xff217AFF),
     this.kLineFillColors = const [Color(0x80217aff), Color(0x00217AFF)],
-
-    ///
     this.ma5Color = const Color(0xFFFF0000),
     this.ma10Color = const Color(0xFF000000),
     this.upColor = const Color(0xFFD5405D),
@@ -107,22 +95,20 @@ class KChartStyle {
 
   final double indicatorTopMargin = 8.0;
 
-  ///point-to-point distance
+  /// point-to-point distance
   final double pointWidth = 11.0;
 
-  ///candle width
+  /// candle width
   final double candleWidth = 8.5;
   final double candleLineWidth = 1.0;
 
-  ///vol column width
+  /// vol column width
   final double volWidth = 8.5;
 
-  ///vertical-horizontal cross line width
+  /// vertical-horizontal cross line width
   final double crossWidth = 0.8;
 
-  ///(line length - space line - thickness) of the current price
-  // final double nowPriceLineLength = 4.5;
-  // final double nowPriceLineSpan = 3.5;
+  /// (line length - space line - thickness) of the current price
   final double nowPriceLineWidth = 0.8;
 
   /// Border width : apply for cross & now price
@@ -131,7 +117,7 @@ class KChartStyle {
   final int gridRows = 4;
   final int gridColumns = 4;
 
-  ///customize the time below
+  /// customize the time below
   final List<String>? dateTimeFormat;
 
   const KChartStyle({this.dateTimeFormat});

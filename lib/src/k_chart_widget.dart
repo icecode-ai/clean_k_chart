@@ -33,11 +33,11 @@ class KChartWidget extends StatefulWidget {
   final List<KLineEntity>? datas;
   final List<MainIndicator> mainIndicators;
 
-  ///warning only using MA, BOLL, SAR
+  /// warning only using MA, BOLL, SAR
   final bool volHidden;
   final List<SecondaryIndicator> secondaryIndicators;
 
-  ///SecondaryState { MACD, KDJ, RSI, WR, CCI }
+  /// SecondaryState { MACD, KDJ, RSI, WR, CCI }
   final bool isLine;
   final bool isTapShowInfoDialog;
   final bool hideGrid;
@@ -46,9 +46,9 @@ class KChartWidget extends StatefulWidget {
   final double mBaseHeight;
   final double? mSecondaryHeight;
 
-  // It will be called when the screen scrolls to the end.
-  // If true, it will be scrolled to the end of the right side of the screen.
-  // If it is false, it will be scrolled to the end of the left side of the screen.
+  /// It will be called when the screen scrolls to the end.
+  /// If true, it will be scrolled to the end of the right side of the screen.
+  /// If it is false, it will be scrolled to the end of the left side of the screen.
   final Function(bool)? onLoadMore;
 
   final int fixedLength;
@@ -123,6 +123,7 @@ class _KChartWidgetState extends State<KChartWidget>
   @override
   void dispose() {
     mInfoWindowStream.close();
+
     _controller?.dispose();
 
     super.dispose();
@@ -145,7 +146,7 @@ class _KChartWidgetState extends State<KChartWidget>
       mainIndicators: widget.mainIndicators,
     );
 
-    final painter = ChartPainter(
+    final ChartPainter painter = ChartPainter(
       widget.chartStyle,
       widget.chartColors,
       baseDimension: baseDimension,
@@ -167,6 +168,7 @@ class _KChartWidgetState extends State<KChartWidget>
       fixedLength: widget.fixedLength,
       verticalTextAlignment: widget.verticalTextAlignment,
     );
+
     _painter = painter;
 
     return GestureDetector(
@@ -183,27 +185,35 @@ class _KChartWidgetState extends State<KChartWidget>
       },
       onHorizontalDragDown: (details) {
         isOnTap = false;
+
         _stopAnimation();
         _onDragChanged(true);
       },
       onHorizontalDragUpdate: (details) {
-        if (isScale || isLongPress) return;
+        if (isScale || isLongPress) {
+          return;
+        }
+
         mScrollX = ((details.primaryDelta ?? 0) / mScaleX + mScrollX)
             .clamp(0.0, painter.maxScrollX)
             .toDouble();
+
         notifyChanged();
       },
       onHorizontalDragEnd: (DragEndDetails details) {
-        var velocity = details.velocity.pixelsPerSecond.dx;
-        _onFling(velocity);
+        _onFling(details.velocity.pixelsPerSecond.dx);
       },
       onHorizontalDragCancel: () => _onDragChanged(false),
       onScaleStart: (_) {
         isScale = true;
       },
       onScaleUpdate: (details) {
-        if (isDrag || isLongPress) return;
+        if (isDrag || isLongPress) {
+          return;
+        }
+
         mScaleX = (_lastScale * details.scale).clamp(0.5, 2.2);
+
         notifyChanged();
       },
       onScaleEnd: (_) {
@@ -259,6 +269,7 @@ class _KChartWidgetState extends State<KChartWidget>
     final bool dataChanged =
         !identical(datas, _calculatedDatas) ||
         datas.length != _calculatedDataLength;
+
     final bool indicatorsChanged =
         !identical(widget.mainIndicators, _calculatedMainIndicators) ||
         !identical(widget.secondaryIndicators, _calculatedSecondaryIndicators);
@@ -294,6 +305,7 @@ class _KChartWidgetState extends State<KChartWidget>
     }
 
     _lastInfoWindow = info;
+
     mInfoWindowStream.sink.add(info);
   }
 
@@ -319,6 +331,7 @@ class _KChartWidgetState extends State<KChartWidget>
 
   void _onFling(double x) {
     _controller?.dispose();
+
     _controller = AnimationController(
       duration: Duration(milliseconds: widget.flingTime),
       vsync: this,
@@ -328,23 +341,30 @@ class _KChartWidgetState extends State<KChartWidget>
         .animate(
           CurvedAnimation(parent: _controller!.view, curve: widget.flingCurve),
         );
+
     aniX!.addListener(() {
       mScrollX = aniX!.value;
       if (mScrollX <= 0) {
         mScrollX = 0;
+
         if (widget.onLoadMore != null) {
           widget.onLoadMore!(true);
         }
+
         _stopAnimation();
       } else if (mScrollX >= (_painter?.maxScrollX ?? 0)) {
         mScrollX = _painter?.maxScrollX ?? 0;
+
         if (widget.onLoadMore != null) {
           widget.onLoadMore!(false);
         }
+
         _stopAnimation();
       }
+
       notifyChanged();
     });
+
     aniX!.addStatusListener((status) {
       if (status == AnimationStatus.completed ||
           status == AnimationStatus.dismissed) {

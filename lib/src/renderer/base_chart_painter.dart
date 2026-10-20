@@ -7,7 +7,6 @@ import 'package:clean_k_chart/src/styles/k_chart_style.dart';
 import 'package:clean_k_chart/src/utils/date_format_util.dart';
 import 'package:flutter/rendering.dart';
 
-/// BaseChartPainter
 abstract class BaseChartPainter extends CustomPainter {
   /// Maximum scroll offset of this chart instance.
   double maxScrollX = 0.0;
@@ -37,11 +36,11 @@ abstract class BaseChartPainter extends CustomPainter {
   List<RenderRect> mSecondaryRectList = [];
   late double mDisplayHeight, mWidth;
 
-  // padding
-  // mBottomPadding: dateRect height
+  /// padding
+  /// mBottomPadding: dateRect height
   double mTopPadding = 20.0, mBottomPadding = 16.0, mChildPadding = 12.0;
 
-  // grid: rows - columns
+  /// grid: rows - columns
   int mGridRows = 4, mGridColumns = 4;
   int mStartIndex = 0, mStopIndex = 0;
   double mMainMaxValue = double.minPositive, mMainMinValue = double.maxFinite;
@@ -55,7 +54,7 @@ abstract class BaseChartPainter extends CustomPainter {
   final KChartStyle chartStyle;
   late double mPointWidth;
 
-  // format time
+  /// format time
   List<String> mFormats = [yyyy, '-', mm, '-', dd, ' ', HH, ':', nn];
   double xFrontPadding;
 
@@ -81,9 +80,8 @@ abstract class BaseChartPainter extends CustomPainter {
   }) {
     mItemCount = datas?.length ?? 0;
     mPointWidth = chartStyle.pointWidth;
-    mTopPadding =
-        chartStyle.topPadding +
-        baseDimension.totalLabelHeight; // space to display text of main chart
+    // space to display text of main chart
+    mTopPadding = chartStyle.topPadding + baseDimension.totalLabelHeight;
     mBottomPadding = chartStyle.bottomPadding;
     mChildPadding = chartStyle.childPadding;
     mGridRows = chartStyle.gridRows;
@@ -201,6 +199,7 @@ abstract class BaseChartPainter extends CustomPainter {
     mainHeight -= baseDimension.totalSecondaryHeight;
 
     mMainRect = Rect.fromLTRB(0, mTopPadding, mWidth, mTopPadding + mainHeight);
+
     mDateRect = Rect.fromLTRB(
       0,
       mMainRect.bottom,
@@ -218,6 +217,7 @@ abstract class BaseChartPainter extends CustomPainter {
     }
 
     mSecondaryRectList.clear();
+
     for (int i = 0; i < secondaryIndicators.length; ++i) {
       mSecondaryRectList.add(
         RenderRect(
@@ -264,8 +264,10 @@ abstract class BaseChartPainter extends CustomPainter {
   void getMainMaxMinValue(KLineEntity item, int i) {
     double maxPrice = item.high;
     double minPrice = item.low;
+
     for (int i = 0; i < mainIndicators.length; ++i) {
       final value = mainIndicators[i].getMaxMinValue(item, minPrice, maxPrice);
+
       minPrice = value.$1;
       maxPrice = value.$2;
     }
@@ -289,7 +291,7 @@ abstract class BaseChartPainter extends CustomPainter {
     }
   }
 
-  // get the maximum and minimum of the Vol value
+  /// get the maximum and minimum of the Vol value
   void getVolMaxMinValue(KLineEntity item) {
     mVolMaxValue = max(
       mVolMaxValue,
@@ -302,7 +304,7 @@ abstract class BaseChartPainter extends CustomPainter {
     );
   }
 
-  // compute maximum and minimum of secondary value
+  /// compute maximum and minimum of secondary value
   void getSecondaryMaxMinValue(int index, KLineEntity item) {
     final SecondaryIndicator indicator = secondaryIndicators[index];
     final value = indicator.getMaxMinValue(
@@ -315,7 +317,7 @@ abstract class BaseChartPainter extends CustomPainter {
     mSecondaryRectList[index].mMaxValue = value.$2;
   }
 
-  // translate x
+  /// translate x
   double xToTranslateX(double x) => -mTranslateX + x / scaleX;
 
   int indexOfTranslateX(double translateX) =>
@@ -338,6 +340,7 @@ abstract class BaseChartPainter extends CustomPainter {
 
     final int mid = start + (end - start) ~/ 2;
     final double midValue = getX(mid);
+
     if (translateX < midValue) {
       return _indexOfTranslateX(translateX, start, mid);
     } else if (translateX > midValue) {
@@ -399,6 +402,7 @@ abstract class BaseChartPainter extends CustomPainter {
 /// Render Rectangle
 class RenderRect {
   Rect mRect;
+
   double mMaxValue = double.minPositive, mMinValue = double.maxFinite;
 
   RenderRect(this.mRect);
