@@ -35,4 +35,6 @@ import_rules:
       disallow:
         - package:flutter/material.dart
         - package:flutter/cupertino.dart
-      reason: 禁止引入原生 Material 和 Cupertino 依赖
+        - package:material_ui/material_ui.dart
+        - package:cupertino_ui/cupertino_ui.dart
+      reason: Prohibit the introduction of native Material and Cupertino dependencies
