@@ -1,8 +1,8 @@
+forked from [TrangLeQuynh/k_chart_plus](https://github.com/TrangLeQuynh/k_chart_plus)
+
 # clean_k_chart
 
 [![pub package](https://img.shields.io/pub/v/clean_k_chart.svg)](https://pub.dev/packages/clean_k_chart)
-
-forked from [TrangLeQuynh/k_chart_plus](https://github.com/TrangLeQuynh/k_chart_plus)
 
 ## Features
 - Candlestick and line (trend) charts
