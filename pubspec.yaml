@@ -4,7 +4,7 @@ version: 1.0.1
 homepage: https://github.com/icecode-ai/clean_k_chart
 
 environment:
-  sdk: ^3.13.5
+  sdk: ^3.13.7
   flutter: ">=1.17.0"
 
 dependencies:
