@@ -95,15 +95,14 @@ class MACDIndicator extends SecondaryIndicator<MACDEntity, MACDStyle> {
     Canvas canvas,
     KChartColors chartColors,
   ) {
-    final prevMacd = lastPoint.macd;
-    final macd = curPoint.macd;
+    final double? prevMacd = lastPoint.macd;
 
-    if (curPoint.macd != null) {
-      final mMACDWidth = indicatorStyle.macdWidth;
-
-      double r = mMACDWidth / 2;
-      double zeroy = getY(0);
-      double macdY = getY(macd!);
+    final double? macd = curPoint.macd;
+    if (macd != null) {
+      final double mMACDWidth = indicatorStyle.macdWidth;
+      final double r = mMACDWidth / 2;
+      final double zeroy = getY(0);
+      final double macdY = getY(macd);
 
       _rectPaint.style = (prevMacd == null || prevMacd <= macd)
           ? PaintingStyle.stroke
@@ -141,7 +140,8 @@ class MACDIndicator extends SecondaryIndicator<MACDEntity, MACDStyle> {
 
   @override
   void calc(List<KLineEntity> dataList) {
-    final params = calcParams;
+    final List<int> params = calcParams;
+    final int maxPeriod = max(params[0], params[1]);
 
     double closeSum = 0;
     double emaShort = 0;
@@ -150,10 +150,8 @@ class MACDIndicator extends SecondaryIndicator<MACDEntity, MACDStyle> {
     double difSum = 0;
     double dea = 0;
 
-    final maxPeriod = max(params[0], params[1]);
-
     for (int i = 0; i < dataList.length; i++) {
-      KLineEntity entity = dataList[i];
+      final KLineEntity entity = dataList[i];
 
       final close = entity.close;
       closeSum += close;

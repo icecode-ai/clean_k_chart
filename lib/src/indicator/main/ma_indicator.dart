@@ -116,7 +116,7 @@ class MAIndicator extends MainIndicator<CandleEntity, MAStyle> {
     if (dataList.isNotEmpty) {
       for (int i = 0; i < dataList.length; i++) {
         final KLineEntity entity = dataList[i];
-        final closePrice = entity.close;
+        final double closePrice = entity.close;
 
         entity.maValueList = List<double>.filled(calcParams.length, 0);
 

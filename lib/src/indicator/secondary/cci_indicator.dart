@@ -64,7 +64,7 @@ class CCIIndicator extends SecondaryIndicator<MACDEntity, CCIStyle> {
     required int fixedLength,
     required Rect chartRect,
   }) {
-    double jumpStep = maxValue - minValue;
+    final double jumpStep = maxValue - minValue;
 
     late int jumpValue;
     if (jumpStep >= 100) {
@@ -160,6 +160,7 @@ class CCIIndicator extends SecondaryIndicator<MACDEntity, CCIStyle> {
         for (int j = i - warmUpEnd; j <= i; j++) {
           absDeviationSum += (tpList[j] - maTp).abs();
         }
+
         final double md = absDeviationSum / periods;
 
         kline.cci = md != 0 ? ((tp - maTp) / md) / 0.015 : 0;

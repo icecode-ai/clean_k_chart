@@ -118,7 +118,7 @@ class EMAIndicator extends MainIndicator<CandleEntity, MAStyle> {
       final List<double> ema = List<double>.filled(calcParams.length, 0);
 
       for (int j = 0; j < calcParams.length; ++j) {
-        final p = calcParams[j];
+        final int p = calcParams[j];
         final double multiplier = 2 / (p + 1);
 
         if (i == 0) {

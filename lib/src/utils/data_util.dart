@@ -39,7 +39,7 @@ class DataUtil {
     double volumeMa10 = 0;
 
     for (int i = 0; i < dataList.length; i++) {
-      KLineEntity entry = dataList[i];
+      final KLineEntity entry = dataList[i];
 
       volumeMa5 += entry.vol;
       volumeMa10 += entry.vol;

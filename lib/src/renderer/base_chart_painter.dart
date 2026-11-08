@@ -105,8 +105,9 @@ abstract class BaseChartPainter extends CustomPainter {
       return;
     }
 
-    int firstTime = datas!.first.time;
-    int secondTime = datas![1].time;
+    final int firstTime = datas!.first.time;
+    final int secondTime = datas![1].time;
+
     int time = secondTime - firstTime;
     time ~/= 1000;
 
@@ -191,8 +192,8 @@ abstract class BaseChartPainter extends CustomPainter {
 
   /// init the rectangle box to draw chart
   void initRect(Size size) {
-    double volHeight = baseDimension.mVolumeHeight;
-    double secondaryHeight = baseDimension.mSecondaryHeight;
+    final double volHeight = baseDimension.mVolumeHeight;
+    final double secondaryHeight = baseDimension.mSecondaryHeight;
 
     double mainHeight = mDisplayHeight;
     mainHeight -= volHeight;
@@ -249,7 +250,7 @@ abstract class BaseChartPainter extends CustomPainter {
     mStopIndex = indexOfTranslateX(xToTranslateX(mWidth));
 
     for (int i = mStartIndex; i <= mStopIndex; i++) {
-      var item = datas![i];
+      final KLineEntity item = datas![i];
 
       getMainMaxMinValue(item, i);
       getVolMaxMinValue(item);
@@ -307,7 +308,8 @@ abstract class BaseChartPainter extends CustomPainter {
   /// compute maximum and minimum of secondary value
   void getSecondaryMaxMinValue(int index, KLineEntity item) {
     final SecondaryIndicator indicator = secondaryIndicators[index];
-    final value = indicator.getMaxMinValue(
+
+    final (double, double) value = indicator.getMaxMinValue(
       item,
       mSecondaryRectList[index].mMinValue,
       mSecondaryRectList[index].mMaxValue,
@@ -365,7 +367,8 @@ abstract class BaseChartPainter extends CustomPainter {
 
   /// get the minimum value of translation
   double getMinTranslateX() {
-    var x = -mDataLen + mWidth / scaleX - mPointWidth / 2 - xFrontPadding;
+    final double x =
+        -mDataLen + mWidth / scaleX - mPointWidth / 2 - xFrontPadding;
 
     return x >= 0 ? 0.0 : x;
   }

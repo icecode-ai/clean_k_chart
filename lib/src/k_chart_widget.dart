@@ -96,6 +96,7 @@ class _KChartWidgetState extends State<KChartWidget>
     with TickerProviderStateMixin {
   final StreamController<InfoWindowEntity?> mInfoWindowStream =
       StreamController<InfoWindowEntity?>();
+
   double mScaleX = 0.5, mScrollX = 0.0, mSelectX = 0.0;
   AnimationController? _controller;
   Animation<double>? aniX;
@@ -127,132 +128,6 @@ class _KChartWidgetState extends State<KChartWidget>
     _controller?.dispose();
 
     super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (widget.datas != null && widget.datas!.isEmpty) {
-      mScrollX = mSelectX = 0.0;
-      mScaleX = 0.5;
-    }
-
-    _calculateIndicatorsIfNeeded();
-
-    final BaseDimension baseDimension = BaseDimension(
-      mBaseHeight: widget.mBaseHeight,
-      mSecondaryHeight: widget.mSecondaryHeight ?? widget.mBaseHeight * .2,
-      volHidden: widget.volHidden,
-      secondaryIndicators: widget.secondaryIndicators,
-      mainIndicators: widget.mainIndicators,
-    );
-
-    final ChartPainter painter = ChartPainter(
-      widget.chartStyle,
-      widget.chartColors,
-      baseDimension: baseDimension,
-      onInfoWindow: _pushInfoWindow,
-      xFrontPadding: widget.xFrontPadding,
-      datas: widget.datas,
-      scaleX: mScaleX,
-      scrollX: mScrollX,
-      selectX: mSelectX,
-      isLongPress: isLongPress,
-      isOnTap: isOnTap,
-      isTapShowInfoDialog: widget.isTapShowInfoDialog,
-      mainIndicators: widget.mainIndicators,
-      volHidden: widget.volHidden,
-      secondaryIndicators: widget.secondaryIndicators,
-      isLine: widget.isLine,
-      hideGrid: widget.hideGrid,
-      showNowPrice: widget.showNowPrice,
-      fixedLength: widget.fixedLength,
-      verticalTextAlignment: widget.verticalTextAlignment,
-    );
-
-    _painter = painter;
-
-    return GestureDetector(
-      onTapUp: (details) {
-        if (painter.isInMainRect(details.localPosition)) {
-          isOnTap = true;
-
-          if (mSelectX != details.localPosition.dx &&
-              widget.isTapShowInfoDialog) {
-            mSelectX = details.localPosition.dx;
-            notifyChanged();
-          }
-        }
-      },
-      onHorizontalDragDown: (details) {
-        isOnTap = false;
-
-        _stopAnimation();
-        _onDragChanged(true);
-      },
-      onHorizontalDragUpdate: (details) {
-        if (isScale || isLongPress) {
-          return;
-        }
-
-        mScrollX = ((details.primaryDelta ?? 0) / mScaleX + mScrollX)
-            .clamp(0.0, painter.maxScrollX)
-            .toDouble();
-
-        notifyChanged();
-      },
-      onHorizontalDragEnd: (DragEndDetails details) {
-        _onFling(details.velocity.pixelsPerSecond.dx);
-      },
-      onHorizontalDragCancel: () => _onDragChanged(false),
-      onScaleStart: (_) {
-        isScale = true;
-      },
-      onScaleUpdate: (details) {
-        if (isDrag || isLongPress) {
-          return;
-        }
-
-        mScaleX = (_lastScale * details.scale).clamp(0.5, 2.2);
-
-        notifyChanged();
-      },
-      onScaleEnd: (_) {
-        isScale = false;
-        _lastScale = mScaleX;
-      },
-      onLongPressStart: (details) {
-        isOnTap = false;
-        isLongPress = true;
-
-        if (mSelectX != details.localPosition.dx) {
-          mSelectX = details.localPosition.dx;
-
-          notifyChanged();
-        }
-      },
-      onLongPressMoveUpdate: (details) {
-        if (mSelectX != details.localPosition.dx) {
-          mSelectX = details.localPosition.dx;
-
-          notifyChanged();
-        }
-      },
-      onLongPressEnd: (details) {
-        isLongPress = false;
-        _pushInfoWindow(null);
-
-        notifyChanged();
-      },
-      child: Stack(
-        children: <Widget>[
-          CustomPaint(
-            size: Size(double.infinity, baseDimension.mDisplayHeight),
-            painter: painter,
-          ),
-          if (widget.showInfoDialog) _buildInfoDialog(),
-        ],
-      ),
-    );
   }
 
   /// Calculates indicator values for [KChartWidget.datas] when the data list
@@ -402,6 +277,132 @@ class _KChartWidgetState extends State<KChartWidget>
           child: widget.detailBuilder.call(entity),
         );
       },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.datas != null && widget.datas!.isEmpty) {
+      mScrollX = mSelectX = 0.0;
+      mScaleX = 0.5;
+    }
+
+    _calculateIndicatorsIfNeeded();
+
+    final BaseDimension baseDimension = BaseDimension(
+      mBaseHeight: widget.mBaseHeight,
+      mSecondaryHeight: widget.mSecondaryHeight ?? widget.mBaseHeight * .2,
+      volHidden: widget.volHidden,
+      secondaryIndicators: widget.secondaryIndicators,
+      mainIndicators: widget.mainIndicators,
+    );
+
+    final ChartPainter painter = ChartPainter(
+      widget.chartStyle,
+      widget.chartColors,
+      baseDimension: baseDimension,
+      onInfoWindow: _pushInfoWindow,
+      xFrontPadding: widget.xFrontPadding,
+      datas: widget.datas,
+      scaleX: mScaleX,
+      scrollX: mScrollX,
+      selectX: mSelectX,
+      isLongPress: isLongPress,
+      isOnTap: isOnTap,
+      isTapShowInfoDialog: widget.isTapShowInfoDialog,
+      mainIndicators: widget.mainIndicators,
+      volHidden: widget.volHidden,
+      secondaryIndicators: widget.secondaryIndicators,
+      isLine: widget.isLine,
+      hideGrid: widget.hideGrid,
+      showNowPrice: widget.showNowPrice,
+      fixedLength: widget.fixedLength,
+      verticalTextAlignment: widget.verticalTextAlignment,
+    );
+
+    _painter = painter;
+
+    return GestureDetector(
+      onTapUp: (details) {
+        if (painter.isInMainRect(details.localPosition)) {
+          isOnTap = true;
+
+          if (mSelectX != details.localPosition.dx &&
+              widget.isTapShowInfoDialog) {
+            mSelectX = details.localPosition.dx;
+            notifyChanged();
+          }
+        }
+      },
+      onHorizontalDragDown: (details) {
+        isOnTap = false;
+
+        _stopAnimation();
+        _onDragChanged(true);
+      },
+      onHorizontalDragUpdate: (details) {
+        if (isScale || isLongPress) {
+          return;
+        }
+
+        mScrollX = ((details.primaryDelta ?? 0) / mScaleX + mScrollX)
+            .clamp(0.0, painter.maxScrollX)
+            .toDouble();
+
+        notifyChanged();
+      },
+      onHorizontalDragEnd: (DragEndDetails details) {
+        _onFling(details.velocity.pixelsPerSecond.dx);
+      },
+      onHorizontalDragCancel: () => _onDragChanged(false),
+      onScaleStart: (_) {
+        isScale = true;
+      },
+      onScaleUpdate: (details) {
+        if (isDrag || isLongPress) {
+          return;
+        }
+
+        mScaleX = (_lastScale * details.scale).clamp(0.5, 2.2);
+
+        notifyChanged();
+      },
+      onScaleEnd: (_) {
+        isScale = false;
+        _lastScale = mScaleX;
+      },
+      onLongPressStart: (details) {
+        isOnTap = false;
+        isLongPress = true;
+
+        if (mSelectX != details.localPosition.dx) {
+          mSelectX = details.localPosition.dx;
+
+          notifyChanged();
+        }
+      },
+      onLongPressMoveUpdate: (details) {
+        if (mSelectX != details.localPosition.dx) {
+          mSelectX = details.localPosition.dx;
+
+          notifyChanged();
+        }
+      },
+      onLongPressEnd: (details) {
+        isLongPress = false;
+        _pushInfoWindow(null);
+
+        notifyChanged();
+      },
+      child: Stack(
+        children: <Widget>[
+          CustomPaint(
+            size: Size(double.infinity, baseDimension.mDisplayHeight),
+            painter: painter,
+          ),
+          if (widget.showInfoDialog) _buildInfoDialog(),
+        ],
+      ),
     );
   }
 }

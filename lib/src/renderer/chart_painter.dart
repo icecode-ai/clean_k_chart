@@ -190,12 +190,12 @@ class ChartPainter extends BaseChartPainter {
   }
 
   @override
-  void drawGrid(canvas) {
+  void drawGrid(Canvas canvas) {
     if (!hideGrid) {
       mMainRenderer.drawGrid(canvas, mGridRows, mGridColumns);
       mVolRenderer?.drawGrid(canvas, mGridRows, mGridColumns);
 
-      for (var element in mSecondaryRendererList) {
+      for (BaseChartRenderer element in mSecondaryRendererList) {
         element.drawGrid(canvas, mGridRows, mGridColumns);
       }
     }
@@ -211,9 +211,8 @@ class ChartPainter extends BaseChartPainter {
     for (int i = mStartIndex; data != null && i <= mStopIndex; i++) {
       final KLineEntity curPoint = data[i];
       final KLineEntity lastPoint = i == 0 ? curPoint : data[i - 1];
-
-      double curX = getX(i);
-      double lastX = i == 0 ? curX : getX(i - 1);
+      final double curX = getX(i);
+      final double lastX = i == 0 ? curX : getX(i - 1);
 
       mMainRenderer.drawChart(lastPoint, curPoint, lastX, curX, size, canvas);
       mVolRenderer?.drawChart(lastPoint, curPoint, lastX, curX, size, canvas);
@@ -239,7 +238,7 @@ class ChartPainter extends BaseChartPainter {
 
     mVolRenderer?.drawVerticalText(canvas, textStyle, mGridRows);
 
-    for (var element in mSecondaryRendererList) {
+    for (BaseChartRenderer element in mSecondaryRendererList) {
       element.drawVerticalText(canvas, textStyle, mGridRows);
     }
   }
@@ -258,8 +257,7 @@ class ChartPainter extends BaseChartPainter {
     double y = 0.0;
 
     for (var i = 0; i <= mGridColumns; ++i) {
-      double translateX = xToTranslateX(columnSpace * i);
-
+      final double translateX = xToTranslateX(columnSpace * i);
       if (translateX >= startX && translateX <= stopX) {
         final int index = indexOfTranslateX(translateX);
         if (datas?[index] == null) {
@@ -292,7 +290,7 @@ class ChartPainter extends BaseChartPainter {
   /// draw the cross line. when user focus
   @override
   void drawCrossLineText(Canvas canvas, Size size) {
-    final index = calculateSelectedX(selectX);
+    final int index = calculateSelectedX(selectX);
     final KLineEntity point = getItem(index);
 
     final TextPainter tp = getTextPainter(
@@ -363,7 +361,7 @@ class ChartPainter extends BaseChartPainter {
       x = mWidth - 1 - textWidth / 2 - w1;
     }
 
-    RRect rectBox = RRect.fromLTRBR(
+    final RRect rectBox = RRect.fromLTRBR(
       x - textWidth / 2 - w1,
       y,
       x + textWidth / 2 + w1,
@@ -401,7 +399,7 @@ class ChartPainter extends BaseChartPainter {
     mMainRenderer.drawText(canvas, data, x);
     mVolRenderer?.drawText(canvas, data, x);
 
-    for (var element in mSecondaryRendererList) {
+    for (BaseChartRenderer element in mSecondaryRendererList) {
       element.drawText(canvas, data, x);
     }
   }

@@ -80,15 +80,14 @@ class KDJIndicator extends SecondaryIndicator<MACDEntity, KDJStyle> {
     required int fixedLength,
     required Rect chartRect,
   }) {
-    final List<int> rangeValue = [80, 20];
     final double spaceRange = maxValue - minValue;
-
     if (spaceRange <= 0) {
       return;
     }
 
+    final List<int> rangeValue = [80, 20];
     for (int i = 0; i < rangeValue.length; ++i) {
-      final value = rangeValue[i];
+      final int value = rangeValue[i];
       if (value < minValue || value > maxValue) {
         continue;
       }
@@ -100,8 +99,9 @@ class KDJIndicator extends SecondaryIndicator<MACDEntity, KDJStyle> {
       tp.layout();
 
       final double ratio = (value - minValue) / spaceRange;
-      final x = chartRect.width - tp.width;
-      final y = chartRect.bottom - ratio * chartRect.height - tp.height / 2;
+      final double x = chartRect.width - tp.width;
+      final double y =
+          chartRect.bottom - ratio * chartRect.height - tp.height / 2;
 
       tp.paint(
         canvas,
@@ -164,11 +164,12 @@ class KDJIndicator extends SecondaryIndicator<MACDEntity, KDJStyle> {
     dataList[0].j = 3 * preK - 2 * preD;
 
     for (int i = 1; i < dataList.length; i++) {
-      final entity = dataList[i];
-      final n = max(0, i - period + 1);
+      final KLineEntity entity = dataList[i];
+      final int n = max(0, i - period + 1);
 
-      var low = entity.low;
-      var high = entity.high;
+      double low = entity.low;
+      double high = entity.high;
+
       for (int j = n; j < i; j++) {
         final t = dataList[j];
         if (t.low < low) {
@@ -180,14 +181,14 @@ class KDJIndicator extends SecondaryIndicator<MACDEntity, KDJStyle> {
         }
       }
 
-      final cur = entity.close;
+      final double cur = entity.close;
 
-      var rsv = (cur - low) * 100.0 / (high - low);
+      double rsv = (cur - low) * 100.0 / (high - low);
       rsv = rsv.isNaN ? 0 : rsv;
 
-      final k = ((kSmooth - 1) * preK + rsv) / kSmooth;
-      final d = ((dSmooth - 1) * preD + k) / dSmooth;
-      final j = 3 * k - 2 * d;
+      final double k = ((kSmooth - 1) * preK + rsv) / kSmooth;
+      final double d = ((dSmooth - 1) * preD + k) / dSmooth;
+      final double j = 3 * k - 2 * d;
 
       preK = k;
       preD = d;

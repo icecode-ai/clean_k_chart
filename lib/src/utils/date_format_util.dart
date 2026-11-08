@@ -220,7 +220,7 @@ const String z = 'z';
 const String Z = 'Z';
 
 String dateFormat(DateTime date, List<String> formats) {
-  final sb = StringBuffer();
+  final StringBuffer sb = StringBuffer();
 
   for (String format in formats) {
     if (format == yyyy) {

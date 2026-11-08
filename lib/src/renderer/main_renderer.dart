@@ -76,6 +76,7 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
     }
 
     double y = chartStyle.indicatorTopMargin;
+
     for (int i = 0; i < indicatorLi.length; ++i) {
       final TextSpan? span = indicatorLi[i].drawFigure(
         data,
@@ -219,11 +220,10 @@ class MainRenderer extends BaseChartRenderer<CandleEntity> {
     final double high = getY(curPoint.high);
     final double low = getY(curPoint.low);
     final double close = getY(curPoint.close);
+    final double r = mCandleWidth / 2;
+    final double lineR = mCandleLineWidth / 2;
 
     double open = getY(curPoint.open);
-    double r = mCandleWidth / 2;
-    double lineR = mCandleLineWidth / 2;
-
     if (open >= close) {
       if (open - close < mCandleLineWidth) {
         open = close + mCandleLineWidth;
